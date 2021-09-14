@@ -1,12 +1,12 @@
-import * as vscode from "vscode";
-import * as path from "path";
+import * as vscode from 'vscode';
+import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
-  let disposable = vscode.commands.registerCommand(
-    "codebot.generateCode",
-    async (args) => {
+  const disposable = vscode.commands.registerCommand(
+    'codebot.generateCode',
+    async args => {
       const codeName = await vscode.window.showInputBox({
-        prompt: `Enter the code name:`,
+        prompt: 'Enter the code name:',
         ignoreFocusOut: true,
         valueSelection: [-1, -1],
       });
@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
       console.log(args);
       console.log(codeName);
       console.log(__dirname);
-    }
+    },
   );
 
   context.subscriptions.push(disposable);
