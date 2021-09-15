@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as handlebars from 'handlebars';
+
 import { getWorkspaceFolder } from './helpers/getWorkspaceFolder';
+import { formatToPascalCase } from './helpers/formatToPascalCase';
 
 export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand(
@@ -52,13 +55,39 @@ export function activate(context: vscode.ExtensionContext) {
           throw new Error('Template folder not found!');
         }
 
-        console.log(folderForGenerationWithTemplate);
-        console.log(currentFolderPath);
-        console.log(workspaceFolderPath);
-        console.log(templateFolder);
-        console.log(args);
-        console.log(codeName);
-        console.log(templateType);
+        const templates = fs.readdirSync(templateFolder);
+
+        if (templates.length === 0) {
+          throw new Error('Template folder is empty!');
+        }
+
+        handlebars.registerHelper('pascalCase', formatToPascalCase);
+
+        templates.forEach(file => {
+          const filePath = path.resolve(templateFolder, file);
+
+          const currentTemplate = handlebars.compile(
+            fs.readFileSync(filePath, 'utf8'),
+          );
+
+          const render = currentTemplate({
+            name: codeName,
+          });
+
+          const filePathFormatted = file
+            .replace(templateType, formatToPascalCase(codeName))
+            .replace('.hbs', '');
+
+          if (!fs.existsSync(folderForGenerationWithTemplate)) {
+            fs.mkdirSync(folderForGenerationWithTemplate, { recursive: true });
+          }
+
+          fs.writeFileSync(
+            path.resolve(folderForGenerationWithTemplate, filePathFormatted),
+            render,
+            { encoding: 'utf-8' },
+          );
+        });
       } catch (error) {
         if (error instanceof Error) {
           vscode.window.showErrorMessage(error.message);
