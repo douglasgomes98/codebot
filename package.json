@@ -45,6 +45,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "dependencies": {
+    "fs": "^0.0.1-security",
     "vscode": "^1.1.37"
   },
   "devDependencies": {

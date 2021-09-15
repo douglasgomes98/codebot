@@ -14,6 +14,10 @@
     "prettier/prettier": "off",
     "quotes": "off",
     "no-unused-vars": "warn",
-    "arrow-parens": "off"
+    "arrow-parens": "off",
+    "import/no-unresolved": "off",
+    "operator-linebreak": "off",
+    "import/prefer-default-export": "off",
+    "import/extensions": "off"
   }
 }
