@@ -4,7 +4,7 @@
   "description": "This extension creates automated codes based on custom created templates.",
   "version": "0.0.1",
   "repository": "https://github.com/douglasgomes98/codebot",
-  "publisher": "douglasgomes98",
+  "publisher": "douglasgomes1998",
   "license": "MIT",
   "engines": {
     "vscode": "^1.59.0"
