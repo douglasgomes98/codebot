@@ -12,8 +12,10 @@ jobs:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.9.1
 
+      - name: Checkout
       - uses: actions/checkout@v2
 
+      - name: Configuration Node Version
       - uses: actions/setup-node@v1
         with:
           node-version: '14.x'
@@ -22,11 +24,11 @@ jobs:
       - name: Install Dependencies
         run: yarn install
 
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
+      # - name: Release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      #   run: npx semantic-release
 
       # - name: Publish to Open VSX Registry
       #   uses: HaaLeo/publish-vscode-extension@v0
