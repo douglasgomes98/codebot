@@ -22,8 +22,19 @@ jobs:
       - name: Install Dependencies
         run: yarn install
 
-      - name: Increment Semantic Version
-        uses: PaulHatch/semantic-version@v4.0.2
+      - name: Process version of the tag
+        id: version
+        uses: ncipollo/semantic-version-action@v1
+
+      - name: Dump steps context
+        env:
+          STEPS_CONTEXT: ${{ toJson(steps.version.outputs) }}
+        run: echo "$STEPS_CONTEXT"
+
+      - name: Dump previous tag
+        env:
+          PREVIOUS_TAG: ${{ steps.version.outputs.previous_tag }}
+        run: echo "$PREVIOUS_TAG"
 
       # - name: Publish to Open VSX Registry
       #   uses: HaaLeo/publish-vscode-extension@v0
