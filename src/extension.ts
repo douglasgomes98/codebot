@@ -21,11 +21,13 @@ export function activate(context: vscode.ExtensionContext) {
           throw new Error('Invalid code name!');
         }
 
-        const templateType = await vscode.window.showInputBox({
+        const templateTypeByUser = await vscode.window.showInputBox({
           prompt: 'Enter the template type:',
           ignoreFocusOut: true,
           valueSelection: [-1, -1],
         });
+
+        const templateType = templateTypeByUser || 'Component';
 
         if (!templateType) {
           throw new Error('Invalid template type!');
