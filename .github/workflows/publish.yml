@@ -23,7 +23,7 @@ jobs:
         run: yarn install
 
       - name: Increment Semantic Version
-        uses: christian-draeger/increment-semantic-version@1.0.2
+        uses: PaulHatch/semantic-version@v4.0.2
 
       # - name: Publish to Open VSX Registry
       #   uses: HaaLeo/publish-vscode-extension@v0
