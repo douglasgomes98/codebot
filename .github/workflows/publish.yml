@@ -14,16 +14,16 @@ jobs:
         
       - name: Checkout
       - uses: actions/checkout@v2
-
+      
       - name: Configuration Node Version
       - uses: actions/setup-node@v1
         with:
           node-version: "14.x"
           cache: "yarn"
-
+          
       - name: Install Dependencies
         run: yarn install
-
+        
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v0
         with:
