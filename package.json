@@ -1,7 +1,7 @@
 {
   "name": "codebot",
   "displayName": "Code generator by templates",
-  "description": "This extension creates automated codes based on custom created templates",
+  "description": "This extension creates automated codes based on custom created templates.",
   "repository": "https://github.com/douglasgomes98/codebot",
   "version": "0.0.1",
   "engines": {
@@ -38,11 +38,7 @@
     "compile": "webpack",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
-    "test-compile": "tsc -p ./",
-    "test-watch": "tsc -watch -p ./",
-    "pretest": "yarn run test-compile && yarn run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "lint": "eslint src --fix --ext ts src && prettier --write src"
   },
   "dependencies": {
     "fs": "^0.0.1-security",
@@ -60,6 +56,7 @@
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-prettier": "^4.0.0",
     "git-commit-msg-linter": "^3.2.8",
+    "prettier": "^2.4.0",
     "ts-loader": "^9.2.2",
     "typescript": "^4.3.2",
     "webpack": "^5.38.1",
