@@ -29,11 +29,11 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         with:
           branch: main
-          extra_plugins: |
-            @semantic-release/exec
-            @semantic-release/git
-            @semantic-release/changelog
-            @semantic-release/github
+#           extra_plugins: |
+#             @semantic-release/exec
+#             @semantic-release/git
+#             @semantic-release/changelog
+#             @semantic-release/github
 
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v0
