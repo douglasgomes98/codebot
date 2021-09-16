@@ -8,27 +8,27 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
- steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
+steps:
+  - name: Cancel Previous Runs
+    uses: styfle/cancel-workflow-action@0.9.1
 
-      - uses: actions/checkout@v2
+  - uses: actions/checkout@v2
 
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '14.x'
-          cache: 'yarn'
+  - uses: actions/setup-node@v1
+    with:
+      node-version: '14.x'
+      cache: 'yarn'
 
-      - name: Install Dependencies
-        run: yarn install
+  - name: Install Dependencies
+    run: yarn install
 
-      - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v0
-        with:
-          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+  - name: Publish to Open VSX Registry
+    uses: HaaLeo/publish-vscode-extension@v0
+    with:
+      pat: ${{ secrets.OPEN_VSX_TOKEN }}
 
-      - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v0
-        with:
-          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-          registryUrl: https://marketplace.visualstudio.com
+  - name: Publish to Visual Studio Marketplace
+    uses: HaaLeo/publish-vscode-extension@v0
+    with:
+      pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+      registryUrl: https://marketplace.visualstudio.com
