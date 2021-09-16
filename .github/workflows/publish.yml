@@ -24,6 +24,12 @@ jobs:
       - name: Install Dependencies
         run: yarn install
 
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v0
+        with:
+          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+          registryUrl: https://marketplace.visualstudio.com
+
       # - name: Release
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -34,9 +40,3 @@ jobs:
       #   uses: HaaLeo/publish-vscode-extension@v0
       #   with:
       #     pat: ${{ secrets.OPEN_VSX_TOKEN }}
-
-      - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v0
-        with:
-          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-          registryUrl: https://marketplace.visualstudio.com
