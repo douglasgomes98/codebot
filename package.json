@@ -6,6 +6,7 @@
   "repository": "https://github.com/douglasgomes98/codebot",
   "publisher": "douglasgomes98",
   "license": "MIT",
+  "private": true,
   "engines": {
     "vscode": "^1.59.0"
   },

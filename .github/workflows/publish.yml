@@ -33,7 +33,6 @@ jobs:
             @semantic-release/exec
             @semantic-release/git
             @semantic-release/changelog
-            @semantic-release/npm
             @semantic-release/github
 
       - name: Publish to Visual Studio Marketplace
