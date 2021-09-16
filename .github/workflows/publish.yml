@@ -12,7 +12,6 @@ jobs:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.9.1
 
-      - name: Checkout
       - uses: actions/checkout@v2
 
       - name: Configuration Node Version
