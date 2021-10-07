@@ -3,34 +3,18 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as handlebars from 'handlebars';
 
-import { getWorkspaceFolder } from './helpers/getWorkspaceFolder';
-import { formatToPascalCase } from './helpers/formatToPascalCase';
+import {
+  getWorkspaceFolder,
+  formatToPascalCase,
+  getTextByInputBox,
+  getConfigurationFile,
+} from './helpers';
 
 export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand(
     'codebot.generateCode',
     async args => {
       try {
-        const codeName = await vscode.window.showInputBox({
-          prompt: 'Enter the code name:',
-          ignoreFocusOut: true,
-          valueSelection: [-1, -1],
-        });
-
-        if (!codeName) {
-          throw new Error('Invalid code name!');
-        }
-
-        const templateType = await vscode.window.showInputBox({
-          prompt: 'Enter the template type:',
-          ignoreFocusOut: true,
-          valueSelection: [-1, -1],
-        });
-
-        if (!templateType) {
-          throw new Error('Invalid template type!');
-        }
-
         const currentFolderPath = args?.fsPath;
         const workspaceFolderPath = getWorkspaceFolder();
 
@@ -39,6 +23,29 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         const folderForGeneration = currentFolderPath || workspaceFolderPath;
+
+        if (!folderForGeneration) {
+          throw new Error('Path for generation not found!');
+        }
+
+        const configurationFile = getConfigurationFile();
+
+        const codeName = await getTextByInputBox('Enter the code name:');
+
+        if (!codeName) {
+          throw new Error('Invalid code name!');
+        }
+
+        const templateInput = await getTextByInputBox(
+          'Enter the template type:',
+        );
+
+        const templateType =
+          templateInput || configurationFile?.defaultTemplateType;
+
+        if (!templateType) {
+          throw new Error('Invalid template type!');
+        }
 
         const folderForGenerationWithTemplate = path.resolve(
           folderForGeneration,
