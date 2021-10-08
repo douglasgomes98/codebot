@@ -52,9 +52,12 @@ export function activate(context: vscode.ExtensionContext) {
           codeName,
         );
 
+        const templatesPath =
+          configurationFile?.templateFolderPath || 'templates';
+
         const templateFolder = path.resolve(
           workspaceFolderPath,
-          'templates',
+          templatesPath,
           templateType,
         );
 
@@ -70,18 +73,18 @@ export function activate(context: vscode.ExtensionContext) {
 
         handlebars.registerHelper('pascalCase', formatToPascalCase);
 
-        templates.forEach(file => {
-          const filePath = path.resolve(templateFolder, file);
+        templates.forEach(template => {
+          const templatePath = path.resolve(templateFolder, template);
 
           const currentTemplate = handlebars.compile(
-            fs.readFileSync(filePath, 'utf8'),
+            fs.readFileSync(templatePath, 'utf8'),
           );
 
           const render = currentTemplate({
             name: codeName,
           });
 
-          const filePathFormatted = file
+          const templateNameFormatted = template
             .replace(templateType, formatToPascalCase(codeName))
             .replace('.hbs', '');
 
@@ -90,7 +93,10 @@ export function activate(context: vscode.ExtensionContext) {
           }
 
           fs.writeFileSync(
-            path.resolve(folderForGenerationWithTemplate, filePathFormatted),
+            path.resolve(
+              folderForGenerationWithTemplate,
+              templateNameFormatted,
+            ),
             render,
             { encoding: 'utf-8' },
           );
