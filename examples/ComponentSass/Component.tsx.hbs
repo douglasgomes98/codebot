@@ -1,0 +1,16 @@
+import { ReactNode } from 'react';
+
+import styles from './{{pascalCase name}}.module.scss';
+
+export interface {{pascalCase name}}Props {
+  children: ReactNode;
+}
+
+export function {{pascalCase name}}({children}: {{pascalCase name}}Props) {
+  return (
+    <div className={styles.container}>
+      <h1>{{pascalCase name}}</h1>
+      {children}
+    </div>
+  )
+}
