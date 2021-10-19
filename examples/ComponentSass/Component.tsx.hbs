@@ -1,0 +1,16 @@
+import { ReactNode } from 'react';
+
+import styles from './{{name}}.module.scss';
+
+export interface {{name}}Props {
+  children: ReactNode;
+}
+
+export function {{name}}({children}: {{name}}Props) {
+  return (
+    <div className={styles.container}>
+      <h1>{{name}}</h1>
+      {children}
+    </div>
+  )
+}

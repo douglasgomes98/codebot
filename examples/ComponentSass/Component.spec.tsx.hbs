@@ -1,0 +1,13 @@
+import { render } from '@testing-library/react';
+import { {{name}}, {{name}}Props } from './{{name}}';
+
+describe('{{name}}', () => {
+  const props: {{name}}Props = {
+    children: null,
+  };
+  it('should render successful', () => {
+    const { container } = render(<{{name}} {...props} />);
+
+    expect(container).toBeInTheDocument();
+  });
+});
