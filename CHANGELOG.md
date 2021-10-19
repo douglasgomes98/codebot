@@ -14,3 +14,7 @@
 
 - Create folder for examples
 - Create "Update Component" command
+
+[1.4.1]
+
+- Update method for "Update Component" command

@@ -32,7 +32,7 @@ export async function updateComponent(args: any) {
 
     const configurationFile = getConfigurationFile();
 
-    const componentName = await getTextByInputBox('Enter the component name:');
+    const componentName = currentFolderPath?.split('/')?.pop();
 
     if (!componentName) {
       throw new Error('Invalid component name!');
