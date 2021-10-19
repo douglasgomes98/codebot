@@ -1,3 +1,6 @@
 export function formatToPascalCase(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
+  return str
+    .split(' ')
+    .map(item => item.charAt(0).toUpperCase() + item.slice(1))
+    .join('');
 }

@@ -1,15 +1,15 @@
 import { ReactNode } from 'react';
 
-import styles from './{{pascalCase name}}.module.scss';
+import styles from './{{name}}.module.scss';
 
-export interface {{pascalCase name}}Props {
+export interface {{name}}Props {
   children: ReactNode;
 }
 
-export function {{pascalCase name}}({children}: {{pascalCase name}}Props) {
+export function {{name}}({children}: {{name}}Props) {
   return (
     <div className={styles.container}>
-      <h1>{{pascalCase name}}</h1>
+      <h1>{{name}}</h1>
       {children}
     </div>
   )

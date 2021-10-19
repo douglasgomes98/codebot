@@ -1,13 +1,18 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
-import * as handlebars from 'handlebars';
 
 import {
   getWorkspaceFolder,
-  formatToPascalCase,
   getTextByInputBox,
   getConfigurationFile,
+  checkExistsFolder,
+  getFilesByFolder,
+  buildTemplate,
+  formatTemplateName,
+  createFolder,
+  createFile,
+  showMessage,
+  filterTemplatesFiles,
 } from './helpers';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -30,10 +35,12 @@ export function activate(context: vscode.ExtensionContext) {
 
         const configurationFile = getConfigurationFile();
 
-        const codeName = await getTextByInputBox('Enter the code name:');
+        const componentName = await getTextByInputBox(
+          'Enter the component name:',
+        );
 
-        if (!codeName) {
-          throw new Error('Invalid code name!');
+        if (!componentName) {
+          throw new Error('Invalid component name!');
         }
 
         const templateInput = await getTextByInputBox(
@@ -49,7 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         const folderForGenerationWithTemplate = path.resolve(
           folderForGeneration,
-          codeName,
+          componentName,
         );
 
         const templatesPath =
@@ -61,49 +68,46 @@ export function activate(context: vscode.ExtensionContext) {
           templateType,
         );
 
-        if (!fs.existsSync(templateFolder)) {
+        if (!checkExistsFolder(templateFolder)) {
           throw new Error('Template folder not found!');
         }
 
-        const templates = fs.readdirSync(templateFolder);
+        const templates = filterTemplatesFiles(
+          getFilesByFolder(templateFolder),
+        );
 
         if (templates.length === 0) {
           throw new Error('Template folder is empty!');
         }
 
-        handlebars.registerHelper('pascalCase', formatToPascalCase);
-
         templates.forEach(template => {
           const templatePath = path.resolve(templateFolder, template);
 
-          const currentTemplate = handlebars.compile(
-            fs.readFileSync(templatePath, 'utf8'),
+          const render = buildTemplate(templatePath, componentName);
+
+          const templateNameFormatted = formatTemplateName(
+            template,
+            templateType,
+            componentName,
           );
 
-          const render = currentTemplate({
-            name: codeName,
-          });
-
-          const templateNameFormatted = template
-            .replace(templateType, formatToPascalCase(codeName))
-            .replace('.hbs', '');
-
-          if (!fs.existsSync(folderForGenerationWithTemplate)) {
-            fs.mkdirSync(folderForGenerationWithTemplate, { recursive: true });
+          if (!checkExistsFolder(folderForGenerationWithTemplate)) {
+            createFolder(folderForGenerationWithTemplate);
           }
 
-          fs.writeFileSync(
+          createFile(
             path.resolve(
               folderForGenerationWithTemplate,
               templateNameFormatted,
             ),
             render,
-            { encoding: 'utf-8' },
           );
         });
+
+        showMessage('Component created!', 'information');
       } catch (error) {
         if (error instanceof Error) {
-          vscode.window.showErrorMessage(error.message);
+          showMessage(error.message, 'error');
         }
       }
     },
