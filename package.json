@@ -2,7 +2,7 @@
   "name": "codebot",
   "displayName": "Codebot - Code generator by templates",
   "description": "This extension creates automated codes based on custom created templates.",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "repository": "https://github.com/douglasgomes98/codebot",
   "publisher": "douglasgomes98",
   "license": "MIT",
@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@types/node": "16.x",
-    "@types/vscode": "^1.61.0",
+    "@types/vscode": "^1.59.0",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "eslint": "^7.32.0",
