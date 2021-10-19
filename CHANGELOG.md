@@ -5,3 +5,7 @@
 [1.3.0]
 
 - Add templateFolderPath in configuration file.
+
+[1.3.1]
+
+- Fix error on not existing configuration file.
