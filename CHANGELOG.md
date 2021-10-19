@@ -9,3 +9,8 @@
 [1.3.1]
 
 - Fix error on not existing configuration file.
+
+[1.4.0]
+
+- Create folder for examples
+- Create "Update Component" command

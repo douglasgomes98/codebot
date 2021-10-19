@@ -11,3 +11,4 @@ export * from './createFolder';
 export * from './createFile';
 export * from './showMessage';
 export * from './filterTemplatesFiles';
+export * from './checkExistsFile';
