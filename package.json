@@ -15,20 +15,20 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:codebot.generateCode"
+    "onCommand:codebot.createComponent"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "codebot.generateCode",
-        "title": "🤖 Generate Code"
+        "command": "codebot.createComponent",
+        "title": "🤖 Create Component"
       }
     ],
     "menus": {
       "explorer/context": [
         {
-          "command": "codebot.generateCode",
+          "command": "codebot.createComponent",
           "group": "1_modification",
           "when": "explorerResourceIsFolder"
         }
