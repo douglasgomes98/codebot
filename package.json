@@ -15,7 +15,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:codebot.createComponent"
+    "onCommand:codebot.createComponent",
+    "onCommand:codebot.updateComponent"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -23,12 +24,21 @@
       {
         "command": "codebot.createComponent",
         "title": "🤖 Create Component"
+      },
+      {
+        "command": "codebot.updateComponent",
+        "title": "🤖 Update Component"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "command": "codebot.createComponent",
+          "group": "1_modification",
+          "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "codebot.updateComponent",
           "group": "1_modification",
           "when": "explorerResourceIsFolder"
         }
