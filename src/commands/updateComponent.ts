@@ -2,7 +2,6 @@ import * as path from 'path';
 
 import {
   getWorkspaceFolder,
-  getTextByInputBox,
   getConfigurationFile,
   checkExistsFolder,
   getFilesByFolder,
@@ -13,6 +12,7 @@ import {
   showMessage,
   filterTemplatesFiles,
   checkExistsFile,
+  showSearchDropdown,
 } from '../helpers';
 
 export async function updateComponent(args: any) {
@@ -38,16 +38,31 @@ export async function updateComponent(args: any) {
       throw new Error('Invalid component name!');
     }
 
-    const templateInput = await getTextByInputBox('Enter the template type:');
+    const templatesPath = configurationFile?.templateFolderPath || 'templates';
 
-    const templateType =
-      templateInput || configurationFile?.defaultTemplateType;
+    const templatesTypes = getFilesByFolder(
+      path.resolve(workspaceFolderPath, templatesPath),
+    );
+
+    if (templatesTypes.length === 0) {
+      throw new Error('Templates folder is empty!');
+    }
+
+    let templateType: string | undefined;
+
+    if (templatesTypes.length === 1) {
+      templateType = templatesTypes[0];
+    } else {
+      templateType = await showSearchDropdown(
+        templatesTypes,
+        'Select template type',
+        'Start typing',
+      );
+    }
 
     if (!templateType) {
       throw new Error('Invalid template type!');
     }
-
-    const templatesPath = configurationFile?.templateFolderPath || 'templates';
 
     const templateFolder = path.resolve(
       workspaceFolderPath,
@@ -68,7 +83,7 @@ export async function updateComponent(args: any) {
     templates.forEach(template => {
       const templateNameFormatted = formatTemplateName(
         template,
-        templateType,
+        String(templateType),
         componentName,
       );
 

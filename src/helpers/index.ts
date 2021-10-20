@@ -12,3 +12,4 @@ export * from './createFile';
 export * from './showMessage';
 export * from './filterTemplatesFiles';
 export * from './checkExistsFile';
+export * from './showSearchDropdown';

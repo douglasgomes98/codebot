@@ -20,6 +20,7 @@
     "import/prefer-default-export": "off",
     "import/extensions": "off",
     "implicit-arrow-linebreak": "off",
-    "function-paren-newline": "off"
+    "function-paren-newline": "off",
+    "prefer-destructuring": "off"
   }
 }
