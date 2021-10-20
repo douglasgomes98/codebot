@@ -18,3 +18,7 @@
 [1.4.1]
 
 - Update method for "Update Component" command
+
+[1.4.2]
+
+- Update flow for "Update Component" and "Create Component" command
