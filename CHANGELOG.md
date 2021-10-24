@@ -22,3 +22,7 @@
 [1.4.2]
 
 - Update flow for "Update Component" and "Create Component" command
+
+[1.4.3]
+
+- Update documentation
