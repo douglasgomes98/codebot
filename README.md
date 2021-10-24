@@ -19,7 +19,14 @@
 │     └─ styles.ts.hbs
 └── workspace
 ```
+### Modificando as configurações
 
-4. Após isso basta escolher a pasta que será gerado um novo componente, e informar o nome do componente.
+1. Crie um arquivo "codebot.config.json"
 
-![Create Command](https://github.com/douglasgomes98/codebot/blob/main/docs/images/commands.png)
+```
+{
+  "templateFolderPath": "src/templates"
+}
+```
+
+
