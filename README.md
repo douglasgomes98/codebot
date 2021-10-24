@@ -19,3 +19,7 @@
 │     └─ styles.ts.hbs
 └── workspace
 ```
+
+4. Após isso basta escolher a pasta que será gerado um novo componente, e informar o nome do componente.
+
+![Create Command](https://github.com/douglasgomes98/codebot/blob/main/docs/images/commands.png)
