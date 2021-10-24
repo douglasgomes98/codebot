@@ -5,13 +5,14 @@
 
 1. Criar uma pasta na raiz do projeto. (O local poderá ser alterado nas configurações).
 2. Criar os arquivos de templates utilizando [handlebarsjs](https://handlebarsjs.com/).
+3. Para cada tipo de template deverá ser criado uma sub pasta dentro da pasta templates contendo os arquivos necessários para criação de um componente. Como o exemplo a seguir.
 
 ```
 ├─ src
 ├─ templates
 │  ├─ ComponentSass
-│  │  ├─ ComponentTsx.module.scss.hbs
-│  │  ├─ ComponentTsx.tsx.hbs
+│  │  ├─ ComponentSass.module.scss.hbs
+│  │  ├─ ComponentSass.tsx.hbs
 │  │  └─ index.tsx.hbs
 │  └─ ComponentSyled
 │     ├─ index.tsx.hbs
