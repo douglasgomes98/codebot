@@ -1,27 +1,33 @@
 # Codebot - Code generator by templates
-#### This extension creates automated codes based on custom created templates.
+### Automate the creation of your boilerplates codes with custom templates.
+</br>
+</br>
 
-### Para utilizar a extensão é necessário seguir alguns passos:
+![Creating a component](/assets/codebot.gif)
 
-1. Criar uma pasta na raiz do projeto. (O local poderá ser alterado nas configurações).
-2. Criar os arquivos de templates utilizando [handlebarsjs](https://handlebarsjs.com/).
-3. Para cada tipo de template deverá ser criado uma sub pasta dentro da pasta templates contendo os arquivos necessários para criação de um componente. Como o exemplo a seguir.
+### Getting started with the templates creation:
+
+1. Creates a new folder in the root of the project.
+2. Creates the templates files using [handlebarsjs](https://handlebarsjs.com/).
+3. For each type of template should be created a sub folder inside the 'templates' folder, containing the necessary files to the component creation. See the structure example:
 
 ```
 ├─ src
 ├─ templates
-│  ├─ ComponentSass
+│  ├─ ComponentSassTsx
 │  │  ├─ ComponentSass.module.scss.hbs
 │  │  ├─ ComponentSass.tsx.hbs
 │  │  └─ index.tsx.hbs
-│  └─ ComponentSyled
+│  └─ ComponentStyled
 │     ├─ index.tsx.hbs
 │     └─ styles.ts.hbs
 └── workspace
 ```
-### Modificando as configurações
+![Template example](/assets/componenthbsexample.png)
 
-1. Crie um arquivo "codebot.config.json"
+### Changing the configurations
+
+1. Creates this file "codebot.config.json"
 
 ```
 {
