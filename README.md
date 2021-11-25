@@ -1,7 +1,13 @@
 # Codebot - Code generator by templates
-### Automate the creation of your boilerplates codes with custom templates.
+###
 </br>
 </br>
+<div style='display: flex; justify-content: center; align-items: center; flex-direction: column'>
+ <img width='200' alt='Codebot' src='./assets/codebot-logo.png' />
+<p> Automate the creation of your boilerplate codes with custom templates. </p>
+</div>
+</br>
+
 
 ![Creating a component](/assets/codebot.gif)
 
