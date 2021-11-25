@@ -7,7 +7,6 @@
 
 ## About
 
-#
 
 <p> Automates the creation of your boilerplate codes with custom templates. </p>
 
