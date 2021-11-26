@@ -1,13 +1,12 @@
-# Codebot - Code generator by templates
-###
 </br>
-</br>
-<div style='display: flex; justify-content: center; align-items: center; flex-direction: column'>
- <img width='200' alt='Codebot' src='./assets/codebot-logo.png' />
-<p> Automate the creation of your boilerplate codes with custom templates. </p>
-</div>
-</br>
+<p align="center">
+ <img alt='Codebot' src='/assets/logo-codebot.png' href="https://github.com/douglasgomes98/codebot" />
+<p align="center"> Code generator by templates. </p>
+</p>
 
+## About
+
+<p> Automates the creation of your boilerplate codes with custom templates. </p>
 
 ![Creating a component](/assets/codebot.gif)
 
@@ -29,6 +28,7 @@
 │     └─ styles.ts.hbs
 └── workspace
 ```
+
 ![Template example](/assets/componenthbsexample.png)
 
 ### Changing the configurations
@@ -40,5 +40,3 @@
   "templateFolderPath": "src/templates"
 }
 ```
-
-
