@@ -1,6 +1,6 @@
 </br>
 <p align="center">
- <img alt='Codebot' src='/assets/logo-codebot.png' href="https://github.com/douglasgomes98/codebot" />
+ <img alt='Codebot' src='https://raw.githubusercontent.com/douglasgomes98/codebot/main/assets/logo-codebot.png' href="https://github.com/douglasgomes98/codebot" />
 <p align="center"> Code generator by templates. </p>
 </p>
 
