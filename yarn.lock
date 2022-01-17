@@ -1112,10 +1112,10 @@ get-symbol-description@^1.0.0:
     call-bind "^1.0.2"
     get-intrinsic "^1.1.1"
 
-git-commit-msg-linter@^3.2.8:
-  version "3.2.8"
-  resolved "https://registry.yarnpkg.com/git-commit-msg-linter/-/git-commit-msg-linter-3.2.8.tgz#b729777e0cf56b611a01e0b534f777a758dec90b"
-  integrity sha512-W0fsSHXe+LjPcoueM9Nhg6S2kVKR+5cPslqyW0gl+bazu0v9GUxetE9x5HZOLOf0UQuoTbpoQk9eDjo49R3AMA==
+git-commit-msg-linter@^4.0.7:
+  version "4.0.7"
+  resolved "https://registry.yarnpkg.com/git-commit-msg-linter/-/git-commit-msg-linter-4.0.7.tgz#072d9a0868cbfe2bdcd1df1e1ed87ca8b1b5e8e7"
+  integrity sha512-GuFVO2DFYKCfjU/HWUMwTZ/0ehjgt4cjhw7bwS539yY3Z0KzIwkMk5QnKwdCb6xzzpI5UYLkCQgZv3WDljOrtA==
   dependencies:
     chalk "^2.4.2"
     did-you-mean "^0.0.1"
