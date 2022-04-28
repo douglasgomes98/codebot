@@ -2,7 +2,7 @@
   "name": "codebot",
   "displayName": "Codebot - Code generator by templates",
   "description": "This extension creates automated codes based on custom created templates.",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "icon": "assets/codebot-vs-logo.png",
   "repository": {
     "type": "git",
