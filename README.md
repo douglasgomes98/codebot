@@ -1,6 +1,6 @@
 </br>
 <p align="center">
- <a href="https://marketplace.visualstudio.com/items?itemName=douglasgomes98.codebot">
+ <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=douglasgomes98.codebot">
  <img alt='Codebot' src='https://raw.githubusercontent.com/douglasgomes98/codebot/main/assets/logo-codebot.png' />
  </a>
 <p align="center"> Code generator by templates. </p>
@@ -48,4 +48,4 @@ As in the gif example, you can press the mouse right-click button and select bet
 }
 ```
 
-Link to the VSCode extensions marketplace: https://marketplace.visualstudio.com/items?itemName=douglasgomes98.codebot
+Link to the <a target="_blank" href="https://marketplace.visualstudio.com/items?itemName=douglasgomes98.codebot">VSCode extensions marketplace</a>
