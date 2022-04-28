@@ -1,6 +1,8 @@
 </br>
 <p align="center">
- <img alt='Codebot' src='https://raw.githubusercontent.com/douglasgomes98/codebot/main/assets/logo-codebot.png' href="https://github.com/douglasgomes98/codebot" />
+ <a href="https://marketplace.visualstudio.com/items?itemName=douglasgomes98.codebot">
+ <img alt='Codebot' src='https://raw.githubusercontent.com/douglasgomes98/codebot/main/assets/logo-codebot.png' />
+ </a>
 <p align="center"> Code generator by templates. </p>
 </p>
 
@@ -31,6 +33,11 @@
 
 ![Template example](/assets/componenthbsexample.png)
 
+### Using the extension:
+As in the gif example, you can press the mouse right-click button and select between two options:
+1. Create Component: generates all the boilerplate files from scratch
+2. Update Component: this brings up the files that don't exist in the folder
+
 ### Changing the configurations
 
 1. Creates this file "codebot.config.json"
@@ -40,3 +47,5 @@
   "templateFolderPath": "src/templates"
 }
 ```
+
+Link to the VSCode extensions marketplace: https://marketplace.visualstudio.com/items?itemName=douglasgomes98.codebot
