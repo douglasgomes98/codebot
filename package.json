@@ -2,17 +2,14 @@
   "name": "codebot",
   "displayName": "Codebot - Code generator by templates",
   "description": "This extension creates automated codes based on custom created templates.",
-  "version": "1.4.7",
-  "icon": "assets/codebot-vs-logo.png",
+  "version": "0.0.0-development",
+  "icon": "assets/codebot.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/douglasgomes98/codebot"
   },
   "publisher": "douglasgomes98",
   "license": "MIT",
-  "engines": {
-    "vscode": "^1.74.0"
-  },
   "categories": [
     "Programming Languages",
     "Snippets",
@@ -55,13 +52,21 @@
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
     "build": "vsce package",
-    "lint": "eslint src --fix --ext ts src && prettier --write src"
+    "lint": "eslint src --fix --ext ts src && prettier --write src",
+    "lint:check": "eslint src --ext ts src && prettier --check src",
+    "test": "echo \"test script not implemented\" && exit 0",
+    "semantic-release": "semantic-release"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
   },
   "dependencies": {
     "fs": "^0.0.2",
     "handlebars": "^4.7.7"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.2",
+    "@semantic-release/git": "^10.0.1",
     "@types/node": "18.x",
     "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
@@ -73,6 +78,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "git-commit-msg-linter": "^4.5.0",
     "prettier": "^2.8.1",
+    "semantic-release": "^19.0.5",
     "ts-loader": "^9.4.2",
     "typescript": "^4.9.4",
     "vsce": "^2.15.0",
