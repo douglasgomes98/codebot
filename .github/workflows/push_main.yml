@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,6 +27,9 @@ jobs:
 
       - name: Running tests
         run: yarn test
+
+      - name: Building
+        run: yarn build
 
       - name: Create Release
         env:
