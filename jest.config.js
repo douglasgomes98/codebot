@@ -13,4 +13,11 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+  moduleNameMapper: {
+    '^vscode$': '<rootDir>/src/test/__mocks__/vscode.js'
+  },
+  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  maxWorkers: 1,
+  forceExit: true,
+  detectOpenHandles: true
 };

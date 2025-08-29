@@ -3,7 +3,7 @@ import { ProjectDetector } from '../managers/ProjectDetector';
 import { TemplateManager } from '../managers/TemplateManager';
 import { PathResolver } from '../utils/PathResolver';
 import { ConfigurationManager } from '../managers/ConfigurationManager';
-import { ErrorType, CommandArgs, TemplateType } from '../types';
+import { ErrorType, CommandArgs, TemplateType, ProcessedFile, ProcessedDirectory } from '../types';
 import { CodebotError } from '../errors';
 import {
   getTextByInputBox,
@@ -111,10 +111,10 @@ export async function createComponent(args: CommandArgs) {
     // Step 6: Resolve target path using PathResolver
     const targetBasePath = pathResolver.resolveTargetPath(projectContext, trimmedComponentName, currentFolderPath);
     
-    // Step 7: Process templates and create files
-    const templateFiles = templateManager.getTemplateFiles(selectedTemplate.path);
+    // Step 7: Process templates hierarchically and create files
+    const templateStructure = await templateManager.scanTemplateStructure(selectedTemplate.path);
     
-    if (templateFiles.length === 0) {
+    if (templateStructure.files.length === 0 && templateStructure.directories.length === 0) {
       throw new CodebotError(
         ErrorType.TEMPLATE_FOLDER_EMPTY,
         `Template folder is empty: ${selectedTemplate.path}`,
@@ -128,52 +128,34 @@ export async function createComponent(args: CommandArgs) {
       createFolder(targetBasePath);
     }
 
-    let filesCreated = 0;
-    let filesSkipped = 0;
+    // Process the template hierarchy
+    const processedTemplate = await templateManager.processTemplateHierarchy(templateStructure, trimmedComponentName);
+    
+    // Track creation and skipping statistics
+    const creationReport = {
+      filesCreated: 0,
+      filesSkipped: 0,
+      directoriesCreated: 0,
+      createdFiles: [] as string[],
+      skippedFiles: [] as string[]
+    };
 
-    // Process each template file
-    for (const templateFile of templateFiles) {
-      try {
-        const templatePath = path.join(selectedTemplate.path, templateFile);
-        
-        // Format the target filename
-        const targetFileName = formatTemplateName(
-          templateFile,
-          selectedTemplate.name,
-          trimmedComponentName,
-        );
-        
-        const targetFilePath = path.join(targetBasePath, targetFileName);
+    // Process root-level files
+    await processFiles(processedTemplate.files, targetBasePath, creationReport);
+    
+    // Process directories recursively
+    await processDirectories(processedTemplate.directories, targetBasePath, creationReport);
 
-        // Skip if file already exists (don't overwrite)
-        if (checkExistsFile(targetFilePath)) {
-          filesSkipped++;
-          continue;
-        }
-
-        // Process template content
-        const processedContent = templateManager.processTemplate(templatePath, trimmedComponentName);
-        
-        // Create the file
-        createFile(targetFilePath, processedContent);
-        filesCreated++;
-
-      } catch (templateError) {
-        // Log individual template processing errors but continue with other files
-        console.warn(`Failed to process template ${templateFile}:`, templateError);
-        throw new CodebotError(
-          ErrorType.TEMPLATE_PROCESSING_ERROR,
-          `Failed to process template: ${templateFile}`,
-          { templateFile, templatePath: selectedTemplate.path, error: templateError },
-          false
-        );
-      }
-    }
+    let filesCreated = creationReport.filesCreated;
+    let filesSkipped = creationReport.filesSkipped;
 
     // Step 8: Show success message with details
     let successMessage = `Component '${trimmedComponentName}' created successfully!`;
     if (filesCreated > 0) {
       successMessage += ` (${filesCreated} files created`;
+      if (creationReport.directoriesCreated > 0) {
+        successMessage += `, ${creationReport.directoriesCreated} directories created`;
+      }
       if (filesSkipped > 0) {
         successMessage += `, ${filesSkipped} files skipped`;
       }
@@ -217,5 +199,72 @@ export async function createComponent(args: CommandArgs) {
       // Handle unknown errors
       showMessage('An unknown error occurred during component creation', 'error');
     }
+  }
+}
+
+// Helper function to process files hierarchically
+async function processFiles(
+  files: ProcessedFile[], 
+  basePath: string, 
+  creationReport: {
+    filesCreated: number;
+    filesSkipped: number;
+    directoriesCreated: number;
+    createdFiles: string[];
+    skippedFiles: string[];
+  }
+): Promise<void> {
+  for (const file of files) {
+    const targetFilePath = path.join(basePath, file.targetPath);
+
+    // Skip if file already exists (don't overwrite)
+    if (checkExistsFile(targetFilePath)) {
+      creationReport.filesSkipped++;
+      creationReport.skippedFiles.push(file.targetPath);
+      continue;
+    }
+
+    try {
+      // Create the file
+      createFile(targetFilePath, file.content);
+      creationReport.filesCreated++;
+      creationReport.createdFiles.push(file.targetPath);
+    } catch (error) {
+      throw new CodebotError(
+        ErrorType.TEMPLATE_PROCESSING_ERROR,
+        `Failed to create file: ${file.targetPath}`,
+        { targetPath: targetFilePath, error },
+        false
+      );
+    }
+  }
+}
+
+// Helper function to process directories hierarchically
+async function processDirectories(
+  directories: ProcessedDirectory[], 
+  basePath: string, 
+  creationReport: {
+    filesCreated: number;
+    filesSkipped: number;
+    directoriesCreated: number;
+    createdFiles: string[];
+    skippedFiles: string[];
+  }
+): Promise<void> {
+  for (const directory of directories) {
+    const targetDirPath = path.join(basePath, directory.targetPath);
+
+    // Create directory if it doesn't exist
+    if (!checkExistsFile(targetDirPath)) {
+      createFolder(targetDirPath);
+      creationReport.directoriesCreated++;
+    }
+
+    // Process files in this directory
+    await processFiles(directory.files, basePath, creationReport);
+    
+    // Process subdirectories recursively
+    await processDirectories(directory.subdirectories, basePath, creationReport);
   }
 }

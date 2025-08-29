@@ -19,6 +19,8 @@ export interface TemplateType {
   name: string;
   path: string;
   files: string[];
+  hasSubdirectories: boolean;
+  structure: TemplateStructure;
 }
 
 export interface Template {
@@ -54,6 +56,54 @@ export interface GenerationOptions {
   overwriteExisting: boolean;
   createMissingDirectories: boolean;
   formatCode: boolean;
+}
+
+export interface FileSystemEntry {
+  name: string;
+  path: string;
+  relativePath: string;
+  isDirectory: boolean;
+  children?: FileSystemEntry[];
+}
+
+export interface TemplateStructure {
+  rootPath: string;
+  files: TemplateFileInfo[];
+  directories: TemplateDirectoryInfo[];
+}
+
+export interface TemplateFileInfo {
+  name: string;
+  path: string;
+  relativePath: string;
+  extension: string;
+}
+
+export interface TemplateDirectoryInfo {
+  name: string;
+  path: string;
+  relativePath: string;
+  files: TemplateFileInfo[];
+  subdirectories: TemplateDirectoryInfo[];
+}
+
+export interface ProcessedTemplate {
+  componentName: string;
+  files: ProcessedFile[];
+  directories: ProcessedDirectory[];
+}
+
+export interface ProcessedFile {
+  originalPath: string;
+  targetPath: string;
+  content: string;
+}
+
+export interface ProcessedDirectory {
+  originalPath: string;
+  targetPath: string;
+  files: ProcessedFile[];
+  subdirectories: ProcessedDirectory[];
 }
 
 export enum ErrorType {

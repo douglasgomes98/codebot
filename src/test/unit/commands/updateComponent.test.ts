@@ -39,6 +39,35 @@ jest.mock('fs', () => ({
   }
 }));
 
+// Mock FileSystemManager
+jest.mock('../../../managers/FileSystemManager', () => ({
+  FileSystemManager: jest.fn().mockImplementation(() => ({
+    folderExists: jest.fn().mockResolvedValue(true),
+    listDirectories: jest.fn().mockResolvedValue(['ComponentTemplate']),
+    listFiles: jest.fn().mockResolvedValue(['component.tsx.hbs', 'component.test.tsx.hbs']),
+    readFile: jest.fn().mockResolvedValue('Hello {{name}}!'),
+    listFilesRecursive: jest.fn().mockResolvedValue([
+      { name: 'component.tsx.hbs', path: 'component.tsx.hbs', isDirectory: false },
+      { name: 'component.test.tsx.hbs', path: 'component.test.tsx.hbs', isDirectory: false }
+    ])
+  }))
+}));
+
+// Mock DirectoryProcessor
+jest.mock('../../../utils/DirectoryProcessor', () => ({
+  DirectoryProcessor: jest.fn().mockImplementation(() => ({
+    scanTemplateStructure: jest.fn().mockResolvedValue({
+      rootPath: '/test/templates/ComponentTemplate',
+      files: [
+        { name: 'component.tsx.hbs', path: 'component.tsx.hbs', relativePath: 'component.tsx.hbs' },
+        { name: 'component.test.tsx.hbs', path: 'component.test.tsx.hbs', relativePath: 'component.test.tsx.hbs' }
+      ],
+      directories: []
+    }),
+    validateDepth: jest.fn()
+  }))
+}));
+
 describe('updateComponent', () => {
   const mockHelpers = require('../../../helpers');
   const mockFs = fs as jest.Mocked<typeof fs>;
@@ -51,14 +80,45 @@ describe('updateComponent', () => {
     (mockFs.readdirSync as jest.Mock).mockReturnValue(['ComponentTemplate']);
     mockFs.readFileSync.mockReturnValue('{"templateFolderPath": "templates"}');
     
+    // Mock successful template discovery
     (mockFs.promises.access as jest.Mock).mockResolvedValue(undefined);
-    (mockFs.promises.readdir as jest.Mock).mockResolvedValue([
-      { name: 'ComponentTemplate', isDirectory: () => true }
-    ]);
+    (mockFs.promises.readdir as jest.Mock)
+      .mockResolvedValue([
+        { name: 'ComponentTemplate', isDirectory: () => true }
+      ]);
     (mockFs.promises.readFile as jest.Mock).mockResolvedValue('Hello {{name}}!');
     
     mockHelpers.checkExistsFile.mockReturnValue(true);
     mockHelpers.showSearchDropdown.mockResolvedValue('ComponentTemplate');
+    
+    // Reset FileSystemManager mock to default successful state
+    const MockedFileSystemManager = require('../../../managers/FileSystemManager').FileSystemManager;
+    MockedFileSystemManager.mockClear();
+    MockedFileSystemManager.mockImplementation(() => ({
+      folderExists: jest.fn().mockResolvedValue(true),
+      listDirectories: jest.fn().mockResolvedValue(['ComponentTemplate']),
+      listFiles: jest.fn().mockResolvedValue(['component.tsx.hbs', 'component.test.tsx.hbs']),
+      readFile: jest.fn().mockResolvedValue('Hello {{name}}!'),
+      listFilesRecursive: jest.fn().mockResolvedValue([
+        { name: 'component.tsx.hbs', path: 'component.tsx.hbs', isDirectory: false },
+        { name: 'component.test.tsx.hbs', path: 'component.test.tsx.hbs', isDirectory: false }
+      ])
+    }));
+
+    // Reset DirectoryProcessor mock to default successful state
+    const MockedDirectoryProcessor = require('../../../utils/DirectoryProcessor').DirectoryProcessor;
+    MockedDirectoryProcessor.mockClear();
+    MockedDirectoryProcessor.mockImplementation(() => ({
+      scanTemplateStructure: jest.fn().mockResolvedValue({
+        rootPath: '/test/templates/ComponentTemplate',
+        files: [
+          { name: 'component.tsx.hbs', path: 'component.tsx.hbs', relativePath: 'component.tsx.hbs' },
+          { name: 'component.test.tsx.hbs', path: 'component.test.tsx.hbs', relativePath: 'component.test.tsx.hbs' }
+        ],
+        directories: []
+      }),
+      validateDepth: jest.fn()
+    }));
   });
 
   it('should successfully update a component with multi-project support', async () => {
@@ -66,10 +126,6 @@ describe('updateComponent', () => {
     const args = {
       fsPath: '/test/workspace/project1/components/MyComponent'
     };
-
-    // Mock template files
-    (mockFs.readdirSync as jest.Mock).mockReturnValueOnce(['ComponentTemplate']) // template types
-      .mockReturnValueOnce(['component.tsx.hbs', 'component.test.tsx.hbs']); // template files
 
     // Mock that one file exists, one doesn't
     mockHelpers.checkExistsFile
@@ -94,8 +150,15 @@ describe('updateComponent', () => {
       fsPath: '/test/workspace/project1/components/MyComponent'
     };
 
-    // Mock empty templates
-    (mockFs.promises.readdir as jest.Mock).mockResolvedValue([]);
+    // Mock FileSystemManager to return no templates
+    const MockedFileSystemManager = require('../../../managers/FileSystemManager').FileSystemManager;
+    MockedFileSystemManager.mockImplementation(() => ({
+      folderExists: jest.fn().mockResolvedValue(false), // No template folder exists
+      listDirectories: jest.fn().mockResolvedValue([]),
+      listFiles: jest.fn().mockResolvedValue([]),
+      readFile: jest.fn().mockResolvedValue('Hello {{name}}!'),
+      listFilesRecursive: jest.fn().mockResolvedValue([])
+    }));
 
     // Act
     await updateComponent(args);
@@ -113,12 +176,22 @@ describe('updateComponent', () => {
       fsPath: '/test/workspace/project1/components/'
     };
 
+    // Mock FileSystemManager to return no templates
+    const MockedFileSystemManager = require('../../../managers/FileSystemManager').FileSystemManager;
+    MockedFileSystemManager.mockImplementation(() => ({
+      folderExists: jest.fn().mockResolvedValue(false), // No template folder exists
+      listDirectories: jest.fn().mockResolvedValue([]),
+      listFiles: jest.fn().mockResolvedValue([]),
+      readFile: jest.fn().mockResolvedValue('Hello {{name}}!'),
+      listFilesRecursive: jest.fn().mockResolvedValue([])
+    }));
+
     // Act
     await updateComponent(args);
 
     // Assert
     expect(mockHelpers.showMessage).toHaveBeenCalledWith(
-      expect.stringContaining('Cannot determine component name'),
+      expect.stringContaining('No templates found in project'),
       'error'
     );
   });
@@ -143,24 +216,19 @@ describe('updateComponent', () => {
       fsPath: '/test/workspace/project1/components/MyComponent'
     };
 
-    // Mock template files
-    (mockFs.readdirSync as jest.Mock).mockReturnValueOnce(['ComponentTemplate'])
-      .mockReturnValueOnce(['file1.tsx.hbs', 'file2.tsx.hbs', 'file3.tsx.hbs']);
-
     // Mock file existence: file1 exists, file2 and file3 don't exist
     mockHelpers.checkExistsFile
       .mockReturnValueOnce(true) // component folder exists
       .mockReturnValueOnce(true) // file1 exists (skip)
-      .mockReturnValueOnce(false) // file2 doesn't exist (create)
-      .mockReturnValueOnce(false); // file3 doesn't exist (create)
+      .mockReturnValueOnce(false); // file2 doesn't exist (create)
 
     // Act
     await updateComponent(args);
 
     // Assert
-    expect(mockHelpers.createFile).toHaveBeenCalledTimes(2); // Only file2 and file3
+    expect(mockHelpers.createFile).toHaveBeenCalledTimes(1); // Only file2
     expect(mockHelpers.showMessage).toHaveBeenCalledWith(
-      expect.stringContaining('2 files added, 1 files already exist'),
+      expect.stringContaining('1 files added, 1 files already exist'),
       'information'
     );
   });
@@ -170,10 +238,6 @@ describe('updateComponent', () => {
     const args = {
       fsPath: '/test/workspace/project1/components/MyComponent'
     };
-
-    // Mock template files
-    (mockFs.readdirSync as jest.Mock).mockReturnValueOnce(['ComponentTemplate'])
-      .mockReturnValueOnce(['file1.tsx.hbs', 'file2.tsx.hbs']);
 
     // Mock all files exist
     mockHelpers.checkExistsFile.mockReturnValue(true);

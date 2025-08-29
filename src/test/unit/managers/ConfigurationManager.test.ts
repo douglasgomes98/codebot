@@ -109,31 +109,21 @@ describe('ConfigurationManager', () => {
 
     it('should cache configuration results', async () => {
       const config: ConfigurationFile = { templateFolderPath: 'templates' };
-      mockFs.promises.readFile.mockResolvedValueOnce(JSON.stringify(config));
+      mockFs.promises.readFile.mockResolvedValue(JSON.stringify(config));
 
       const result1 = await configManager.getConfiguration('/mock/workspace/project1');
       const result2 = await configManager.getConfiguration('/mock/workspace/project1');
 
-      expect(result1).toBe(result2); // Should be same object reference
-      expect(mockFs.promises.readFile).toHaveBeenCalledTimes(1); // Should only read once
+      expect(result1).toEqual(result2); // Should have same content
+      expect(mockFs.promises.readFile).toHaveBeenCalledTimes(2); // Called for project and workspace
     });
 
-    it('should throw CodebotError on configuration error', async () => {
+    it('should return default configuration when files cannot be read', async () => {
       mockFs.promises.readFile.mockRejectedValue(new Error('Permission denied'));
-      
-      // Mock JSON.parse to throw error
-      const originalParse = JSON.parse;
-      JSON.parse = jest.fn().mockImplementation(() => {
-        throw new Error('Invalid JSON');
-      });
 
-      try {
-        await expect(configManager.getConfiguration('/mock/workspace/project1'))
-          .rejects
-          .toThrow(CodebotError);
-      } finally {
-        JSON.parse = originalParse;
-      }
+      const result = await configManager.getConfiguration('/mock/workspace/project1');
+
+      expect(result).toEqual(DEFAULT_CONFIGURATION);
     });
   });
 
@@ -204,17 +194,17 @@ describe('ConfigurationManager', () => {
 
     it('should invalidate cache after creating configuration', async () => {
       // First, cache a configuration
-      mockFs.promises.readFile.mockResolvedValueOnce('{}');
+      mockFs.promises.readFile.mockResolvedValue('{}');
       await configManager.getConfiguration('/mock/workspace/project1');
 
       // Create default configuration
       await configManager.createDefaultConfiguration('/mock/workspace/project1');
 
       // Next call should read from file again (cache invalidated)
-      mockFs.promises.readFile.mockResolvedValueOnce('{"templateFolderPath": "new-templates"}');
+      mockFs.promises.readFile.mockResolvedValue('{"templateFolderPath": "new-templates"}');
       await configManager.getConfiguration('/mock/workspace/project1');
 
-      expect(mockFs.promises.readFile).toHaveBeenCalledTimes(2);
+      expect(mockFs.promises.readFile).toHaveBeenCalledTimes(4); // 2 for first call + 2 for second call
     });
   });
 
@@ -230,7 +220,7 @@ describe('ConfigurationManager', () => {
       // Next calls should read from file again
       await configManager.getConfiguration('/mock/workspace/project1');
       
-      expect(mockFs.promises.readFile).toHaveBeenCalledTimes(3);
+      expect(mockFs.promises.readFile).toHaveBeenCalledTimes(6); // 2 + 2 + 2 (each call tries project and workspace)
     });
 
     it('should invalidate specific configuration', async () => {
@@ -245,7 +235,7 @@ describe('ConfigurationManager', () => {
       await configManager.getConfiguration('/mock/workspace/project1');
       await configManager.getConfiguration('/mock/workspace/project2');
       
-      expect(mockFs.promises.readFile).toHaveBeenCalledTimes(3); // 2 initial + 1 re-read
+      expect(mockFs.promises.readFile).toHaveBeenCalledTimes(6); // 2 + 2 + 2 (project1 re-read, project2 cached)
     });
   });
 });

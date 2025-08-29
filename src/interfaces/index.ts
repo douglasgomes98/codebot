@@ -1,4 +1,4 @@
-import { ProjectContext, TemplateType, ConfigurationFile, CodebotError } from '../types';
+import { ProjectContext, TemplateType, ConfigurationFile, CodebotError, FileSystemEntry, TemplateStructure, ProcessedTemplate } from '../types';
 
 export interface IProjectDetector {
   detectProject(folderPath: string): Promise<ProjectContext>;
@@ -14,18 +14,24 @@ export interface IConfigurationManager {
 
 export interface ITemplateManager {
   discoverTemplates(projectPath: string): Promise<TemplateType[]>;
-  processTemplate(templatePath: string, componentName: string): string;
+  processTemplate(templatePath: string, componentName: string): Promise<string>;
   getTemplateFiles(templateType: string): string[];
+  scanTemplateStructure(templatePath: string): Promise<TemplateStructure>;
+  processTemplateHierarchy(templateStructure: TemplateStructure, componentName: string): Promise<ProcessedTemplate>;
   invalidateCache(): void;
 }
 
 export interface IFileSystemManager {
   createFile(path: string, content: string): Promise<void>;
   createFolder(path: string): Promise<void>;
+  createFolderRecursive(path: string): Promise<void>;
   fileExists(path: string): Promise<boolean>;
   folderExists(path: string): Promise<boolean>;
   readFile(path: string): Promise<string>;
   listFiles(path: string): Promise<string[]>;
+  listDirectories(path: string): Promise<string[]>;
+  listFilesRecursive(path: string): Promise<FileSystemEntry[]>;
+  copyDirectoryStructure(sourcePath: string, targetPath: string): Promise<void>;
 }
 
 export interface IPathResolver {
