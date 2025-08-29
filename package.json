@@ -47,14 +47,16 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "yarn run package",
+    "vscode:prepublish": "npm run package",
     "compile": "webpack",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
     "build": "vsce package",
     "lint": "eslint src --fix --ext ts src && prettier --write src",
     "lint:check": "eslint src --ext ts src && prettier --check src",
-    "test": "echo \"test script not implemented\" && exit 0",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "semantic-release": "semantic-release"
   },
   "engines": {

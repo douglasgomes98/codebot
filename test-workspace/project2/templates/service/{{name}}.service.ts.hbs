@@ -1,0 +1,24 @@
+export class {{name}}Service {
+  constructor() {
+    // Initialize service
+  }
+
+  async get{{name}}(): Promise<any> {
+    // Implement your service logic here
+    return {};
+  }
+
+  async create{{name}}(data: any): Promise<any> {
+    // Implement create logic
+    return data;
+  }
+
+  async update{{name}}(id: string, data: any): Promise<any> {
+    // Implement update logic
+    return { id, ...data };
+  }
+
+  async delete{{name}}(id: string): Promise<void> {
+    // Implement delete logic
+  }
+}

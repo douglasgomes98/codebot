@@ -3,13 +3,14 @@ import { readFile } from './readFile';
 import { ConfigurationFile } from '../types';
 import { getWorkspaceFolder } from './getWorkspaceFolder';
 
-export function getConfigurationFile(): ConfigurationFile | null {
+export function getConfigurationFile(projectPath?: string): ConfigurationFile | null {
   try {
     const workspaceFolderPath = getWorkspaceFolder();
+    const targetPath = projectPath || workspaceFolderPath;
 
-    if (workspaceFolderPath) {
+    if (targetPath) {
       const file = readFile(
-        path.resolve(workspaceFolderPath, 'codebot.config.json'),
+        path.resolve(targetPath, 'codebot.config.json'),
       );
 
       const configurationFile = JSON.parse(file);
