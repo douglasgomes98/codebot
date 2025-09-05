@@ -107,8 +107,11 @@ export class TemplateManager implements ITemplateManager {
 
   async processTemplateHierarchy(templateStructure: TemplateStructure, componentName: string): Promise<ProcessedTemplate> {
     try {
-      const processedFiles = await this.processFiles(templateStructure.files, componentName, '');
-      const processedDirectories = await this.processDirectories(templateStructure.directories, componentName, '');
+      // Extract template folder name from the root path
+      const templateFolderName = this.extractTemplateFolderName(templateStructure.rootPath);
+      
+      const processedFiles = await this.processFiles(templateStructure.files, componentName, '', templateFolderName);
+      const processedDirectories = await this.processDirectories(templateStructure.directories, componentName, '', templateFolderName);
 
       const processedTemplate = {
         componentName,
@@ -296,18 +299,46 @@ export class TemplateManager implements ITemplateManager {
     return path.resolve(filePath).replace(/\\/g, '/');
   }
 
+  private extractTemplateFolderName(templateRootPath: string): string | undefined {
+    try {
+      if (!templateRootPath || typeof templateRootPath !== 'string') {
+        return undefined;
+      }
+      
+      // Handle both Unix and Windows path separators
+      const normalizedPath = templateRootPath.replace(/\\/g, '/');
+      const pathParts = normalizedPath.split('/').filter(part => part.length > 0);
+      
+      if (pathParts.length === 0) {
+        return undefined;
+      }
+      
+      const folderName = pathParts[pathParts.length - 1];
+      
+      // Return undefined if we can't determine a valid folder name
+      if (!folderName || folderName === '.' || folderName === '..') {
+        return undefined;
+      }
+      
+      return folderName;
+    } catch (error) {
+      // If there's any error extracting the folder name, return undefined
+      return undefined;
+    }
+  }
+
   private isCacheValid(timestamp: number): boolean {
     return Date.now() - timestamp < this.CACHE_TTL;
   }
 
-  private async processFiles(files: any[], componentName: string, basePath: string = ''): Promise<ProcessedFile[]> {
+  private async processFiles(files: any[], componentName: string, basePath: string = '', templateFolderName?: string): Promise<ProcessedFile[]> {
     const processedFiles: ProcessedFile[] = [];
 
     for (const file of files) {
       if (ValidationUtils.isTemplateFile(file.name)) {
         const content = await this.fileSystemManager.readFile(file.path);
         const processedContent = this.processTemplateContent(content, componentName);
-        const targetPath = this.generateTargetPath(file.relativePath, componentName, basePath);
+        const targetPath = this.generateTargetPath(file.relativePath, componentName, basePath, templateFolderName);
 
         processedFiles.push({
           originalPath: file.path,
@@ -320,7 +351,7 @@ export class TemplateManager implements ITemplateManager {
     return processedFiles;
   }
 
-  private async processDirectories(directories: any[], componentName: string, basePath: string = ''): Promise<ProcessedDirectory[]> {
+  private async processDirectories(directories: any[], componentName: string, basePath: string = '', templateFolderName?: string): Promise<ProcessedDirectory[]> {
     const processedDirectories: ProcessedDirectory[] = [];
 
     for (const directory of directories) {
@@ -328,9 +359,9 @@ export class TemplateManager implements ITemplateManager {
       const currentDirectoryPath = basePath ? path.join(basePath, directory.relativePath) : directory.relativePath;
       
       // Process files and subdirectories with the accumulated path
-      const processedFiles = await this.processFiles(directory.files, componentName, currentDirectoryPath);
-      const processedSubdirectories = await this.processDirectories(directory.subdirectories, componentName, currentDirectoryPath);
-      const targetPath = this.generateTargetPath(directory.relativePath, componentName, basePath);
+      const processedFiles = await this.processFiles(directory.files, componentName, currentDirectoryPath, templateFolderName);
+      const processedSubdirectories = await this.processDirectories(directory.subdirectories, componentName, currentDirectoryPath, templateFolderName);
+      const targetPath = this.generateTargetPath(directory.relativePath, componentName, basePath, templateFolderName);
 
       processedDirectories.push({
         originalPath: directory.path,
@@ -352,7 +383,7 @@ export class TemplateManager implements ITemplateManager {
     }
   }
 
-  private generateTargetPath(relativePath: string, componentName: string, basePath: string = ''): string {
+  private generateTargetPath(relativePath: string, componentName: string, basePath: string = '', templateFolderName?: string): string {
     // Validate the input relativePath first to prevent path traversal attacks
     this.validateTargetPath(relativePath);
     
@@ -369,7 +400,7 @@ export class TemplateManager implements ITemplateManager {
     }
 
     // Apply component naming rules to the path
-    const processedPath = this.applyNamingRules(targetPath, componentName);
+    const processedPath = this.applyNamingRules(targetPath, componentName, templateFolderName);
 
     // Combine basePath with processedPath using path.join for cross-platform compatibility
     // path.join handles empty strings gracefully and ensures proper path separators
@@ -381,19 +412,27 @@ export class TemplateManager implements ITemplateManager {
     return finalPath;
   }
 
-  private applyNamingRules(filePath: string, componentName: string): string {
+  private applyNamingRules(filePath: string, componentName: string, templateFolderName?: string): string {
     const pathParts = filePath.split(path.sep);
     const fileName = pathParts[pathParts.length - 1];
+    let newFileName = fileName;
 
-    // If the filename contains template placeholder, replace it
-    if (fileName.includes('template') || fileName.includes('Template')) {
-      const newFileName = fileName
-        .replace(/template/gi, componentName.toLowerCase())
-        .replace(/Template/g, this.formatComponentName(componentName));
-
-      pathParts[pathParts.length - 1] = newFileName;
+    // First, check if the filename starts with the template folder name (case-insensitive)
+    if (templateFolderName && fileName.toLowerCase().startsWith(templateFolderName.toLowerCase())) {
+      // Replace the matched portion with the component name, preserving the case of the component name
+      const matchedPortion = fileName.substring(0, templateFolderName.length);
+      const remainingPortion = fileName.substring(templateFolderName.length);
+      newFileName = this.formatComponentName(componentName) + remainingPortion;
     }
 
+    // Then, apply existing template/Template replacement functionality
+    if (newFileName.includes('template') || newFileName.includes('Template')) {
+      newFileName = newFileName
+        .replace(/template/gi, componentName.toLowerCase())
+        .replace(/Template/g, this.formatComponentName(componentName));
+    }
+
+    pathParts[pathParts.length - 1] = newFileName;
     return pathParts.join(path.sep);
   }
 
