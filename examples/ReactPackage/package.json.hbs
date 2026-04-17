@@ -1,0 +1,74 @@
+{
+  "name": "@agentguru/{{name}}",
+  "version": "0.0.1",
+  "author": "AgentGuru",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "repository": {
+    "directory": "packages/{{name}}",
+    "type": "git",
+    "url": "https://github.com/agentguru/sky-ds.git"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "pnpm clean && tsc && vite build",
+    "clean": "pnpm rimraf dist",
+    "dev": "vite",
+    "preview": "vite preview",
+    "sync:packages": "ag-sync-packages-version -pkg {{name}}",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@agentguru/postcss-config": "^2.0.0",
+    "@agentguru/foundations": "^3.0.0",
+    "@agentguru/scripts": "^2.0.0",
+    "@storybook/react": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/react-hooks": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react-swc": "catalog:",
+    "@vitest/ui": "catalog:",
+    "classnames": "catalog:",
+    "framer-motion": "catalog:",
+    "jsdom": "catalog:",
+    "postcss": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "rimraf": "catalog:",
+    "sass": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-dts": "catalog:",
+    "vite-plugin-style-inject": "catalog:",
+    "vite-plugin-svgr": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@agentguru/foundations": "^3.0.0",
+    "classnames": "catalog:",
+    "framer-motion": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  }
+}

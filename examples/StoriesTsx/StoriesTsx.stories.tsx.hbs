@@ -1,0 +1,15 @@
+import type { Meta, StoryObj } from '@storybook/react';
+
+import { {{name}} } from './{{name}}';
+
+const meta: Meta<typeof {{name}}> = {
+  title: '{{name}}',
+  component: {{name}},
+  tags: ['autodocs'],
+};
+
+type Story = StoryObj<typeof {{name}}>;
+
+export default meta;
+
+export const Primary: Story = {}

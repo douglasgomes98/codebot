@@ -1,0 +1,61 @@
+/// <reference types="vitest" />
+import react from '@vitejs/plugin-react-swc';
+import path from 'node:path';
+import { defineConfig } from 'vite';
+import dts from 'vite-plugin-dts';
+import VitePluginStyleInject from 'vite-plugin-style-inject';
+import svgr from 'vite-plugin-svgr';
+
+import pkgJSON from './package.json';
+
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => ({
+  define: mode === 'test' ? {} : { global: 'window' },
+  plugins: [
+    react(),
+    dts({
+      insertTypesEntry: true,
+      rollupTypes: true,
+    }),
+    VitePluginStyleInject(),
+    svgr(),
+  ],
+  build: {
+    sourcemap: false,
+    copyPublicDir: false,
+    minify: 'esbuild',
+    lib: {
+      entry: path.resolve(__dirname, 'src', 'lib', 'main.tsx'),
+      name: pkgJSON.name,
+      fileName: 'index',
+      formats: ['es'],
+    },
+    rollupOptions: {
+      external: [...Object.keys(pkgJSON.peerDependencies)],
+      output: {
+        preserveModules: true,
+        inlineDynamicImports: false,
+        format: 'esm',
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM',
+        },
+      },
+    },
+  },
+  css: {
+    modules: { generateScopedName: '[name]_[local]_[contenthash:base64:5]' },
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler',
+        quietDeps: true, // Disable Sass deprecated warnings
+        silenceDeprecations: ['global-builtin', 'import'], // Disable deprecation warnings
+      },
+    },
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/setupTests.ts'],
+  },
+}));
