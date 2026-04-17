@@ -1,9 +1,9 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { TemplateManager } from '../../managers/TemplateManager';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { FileSystemManager } from '../../managers/FileSystemManager';
-import { TemplateStructure, ProcessedTemplate, ErrorType } from '../../types';
+import { TemplateManager } from '../../managers/TemplateManager';
+import { ErrorType, type TemplateStructure } from '../../types';
 
 describe('TemplateManager', () => {
   let templateManager: TemplateManager;
@@ -33,7 +33,7 @@ describe('TemplateManager', () => {
         'component.test.hbs': 'describe("{{name}}", () => {});',
         'styles/component.css.hbs': '.{{name}} { color: red; }',
         'styles/nested/theme.css.hbs': '.{{name}}-theme { background: blue; }',
-        'utils/helper.js.hbs': 'export const {{name}}Helper = () => {};'
+        'utils/helper.js.hbs': 'export const {{name}}Helper = () => {};',
       };
 
       const templatePath = path.join(templatesDir, 'react-component');
@@ -47,8 +47,9 @@ describe('TemplateManager', () => {
 
     it('should scan template structure with subdirectories', async () => {
       const templatePath = path.join(templatesDir, 'react-component');
-      
-      const structure = await templateManager.scanTemplateStructure(templatePath);
+
+      const structure =
+        await templateManager.scanTemplateStructure(templatePath);
 
       expect(structure.rootPath).toBe(templatePath);
       expect(structure.files).toHaveLength(2); // component.hbs, component.test.hbs
@@ -61,7 +62,9 @@ describe('TemplateManager', () => {
       expect(stylesDir?.subdirectories).toHaveLength(1); // nested
 
       // Check nested directory
-      const nestedDir = stylesDir?.subdirectories.find(d => d.name === 'nested');
+      const nestedDir = stylesDir?.subdirectories.find(
+        d => d.name === 'nested',
+      );
       expect(nestedDir).toBeDefined();
       expect(nestedDir?.files).toHaveLength(1); // theme.css.hbs
     });
@@ -69,10 +72,11 @@ describe('TemplateManager', () => {
     it('should throw error for non-existent template path', async () => {
       const nonExistentPath = path.join(tempDir, 'nonexistent');
 
-      await expect(templateManager.scanTemplateStructure(nonExistentPath))
-        .rejects.toMatchObject({
-          type: ErrorType.TEMPLATE_PROCESSING_ERROR
-        });
+      await expect(
+        templateManager.scanTemplateStructure(nonExistentPath),
+      ).rejects.toMatchObject({
+        type: ErrorType.TEMPLATE_PROCESSING_ERROR,
+      });
     });
   });
 
@@ -85,7 +89,7 @@ describe('TemplateManager', () => {
         'component.hbs': 'export const {{name}} = () => {};',
         'component.test.hbs': 'describe("{{name}}", () => {});',
         'styles/component.css.hbs': '.{{name}} { color: red; }',
-        'utils/helper.js.hbs': 'export const {{name}}Helper = () => {};'
+        'utils/helper.js.hbs': 'export const {{name}}Helper = () => {};',
       };
 
       const templatePath = path.join(templatesDir, 'react-component');
@@ -96,43 +100,56 @@ describe('TemplateManager', () => {
         await fileSystemManager.createFile(fullPath, content);
       }
 
-      templateStructure = await templateManager.scanTemplateStructure(templatePath);
+      templateStructure =
+        await templateManager.scanTemplateStructure(templatePath);
     });
 
     it('should process template hierarchy with component name', async () => {
       const componentName = 'UserProfile';
-      
-      const processed = await templateManager.processTemplateHierarchy(templateStructure, componentName);
+
+      const processed = await templateManager.processTemplateHierarchy(
+        templateStructure,
+        componentName,
+      );
 
       expect(processed.componentName).toBe(componentName);
       expect(processed.files).toHaveLength(2);
       expect(processed.directories).toHaveLength(2);
 
       // Check processed files
-      const componentFile = processed.files.find(f => f.targetPath.includes('component'));
+      const componentFile = processed.files.find(f =>
+        f.targetPath.includes('component'),
+      );
       expect(componentFile?.content).toContain('UserProfile');
 
       // Check processed directories
-      const stylesDir = processed.directories.find(d => d.targetPath.includes('styles'));
+      const stylesDir = processed.directories.find(d =>
+        d.targetPath.includes('styles'),
+      );
       expect(stylesDir).toBeDefined();
       expect(stylesDir?.files).toHaveLength(1);
-      
+
       const cssFile = stylesDir?.files[0];
       expect(cssFile?.content).toContain('UserProfile');
     });
 
     it('should apply naming rules to file paths', async () => {
       const componentName = 'UserProfile';
-      
-      const processed = await templateManager.processTemplateHierarchy(templateStructure, componentName);
+
+      const processed = await templateManager.processTemplateHierarchy(
+        templateStructure,
+        componentName,
+      );
 
       // Files should have .hbs extension removed
-      processed.files.forEach(file => {
+      for (const file of processed.files) {
         expect(file.targetPath).not.toContain('.hbs');
-      });
+      }
 
       // Check if template naming is applied
-      const componentFile = processed.files.find(f => f.targetPath.includes('component'));
+      const componentFile = processed.files.find(f =>
+        f.targetPath.includes('component'),
+      );
       expect(componentFile?.targetPath).toContain('component'); // Should keep original name if no template placeholder
     });
   });
@@ -143,15 +160,15 @@ describe('TemplateManager', () => {
       const templates = {
         'react-component': {
           'component.hbs': 'export const {{name}} = () => {};',
-          'styles/component.css.hbs': '.{{name}} { color: red; }'
+          'styles/component.css.hbs': '.{{name}} { color: red; }',
         },
         'vue-component': {
           'template.vue.hbs': '<template><div>{{name}}</div></template>',
-          'assets/icon.svg.hbs': '<svg>{{name}}</svg>'
+          'assets/icon.svg.hbs': '<svg>{{name}}</svg>',
         },
         'simple-file': {
-          'file.js.hbs': 'const {{name}} = {};'
-        }
+          'file.js.hbs': 'const {{name}} = {};',
+        },
       };
 
       await fileSystemManager.createFolderRecursive(templatesDir);
@@ -171,8 +188,9 @@ describe('TemplateManager', () => {
       // Debug: Check if templates directory exists and has content
       const templatesExist = await fileSystemManager.folderExists(templatesDir);
       expect(templatesExist).toBe(true);
-      
-      const templateEntries = await fileSystemManager.listFilesRecursive(templatesDir);
+
+      const templateEntries =
+        await fileSystemManager.listFilesRecursive(templatesDir);
       const templateDirs = templateEntries.filter(e => e.isDirectory);
       expect(templateDirs.some(d => d.name === 'react-component')).toBe(true);
       expect(templateDirs.some(d => d.name === 'vue-component')).toBe(true);
@@ -203,16 +221,26 @@ describe('TemplateManager', () => {
     beforeEach(async () => {
       const templatePath = path.join(templatesDir, 'test-template');
       await fileSystemManager.createFolderRecursive(templatePath);
-      
+
       const templateFile = path.join(templatePath, 'component.hbs');
-      await fileSystemManager.createFile(templateFile, 'export const {{name}} = () => {};');
+      await fileSystemManager.createFile(
+        templateFile,
+        'export const {{name}} = () => {};',
+      );
     });
 
     it('should process template content with component name', async () => {
-      const templateFile = path.join(templatesDir, 'test-template', 'component.hbs');
+      const templateFile = path.join(
+        templatesDir,
+        'test-template',
+        'component.hbs',
+      );
       const componentName = 'UserProfile';
 
-      const result = await templateManager.processTemplate(templateFile, componentName);
+      const result = await templateManager.processTemplate(
+        templateFile,
+        componentName,
+      );
 
       expect(result).toBe('export const UserProfile = () => {};');
     });
@@ -221,10 +249,11 @@ describe('TemplateManager', () => {
       const nonExistentFile = path.join(templatesDir, 'nonexistent.hbs');
       const componentName = 'Test';
 
-      await expect(templateManager.processTemplate(nonExistentFile, componentName))
-        .rejects.toMatchObject({
-          type: ErrorType.TEMPLATE_PROCESSING_ERROR
-        });
+      await expect(
+        templateManager.processTemplate(nonExistentFile, componentName),
+      ).rejects.toMatchObject({
+        type: ErrorType.TEMPLATE_PROCESSING_ERROR,
+      });
     });
   });
 
@@ -232,15 +261,18 @@ describe('TemplateManager', () => {
     beforeEach(async () => {
       const templatePath = path.join(templatesDir, 'cached-template');
       await fileSystemManager.createFolderRecursive(templatePath);
-      
+
       const templateFile = path.join(templatePath, 'component.hbs');
-      await fileSystemManager.createFile(templateFile, 'export const {{name}} = () => {};');
+      await fileSystemManager.createFile(
+        templateFile,
+        'export const {{name}} = () => {};',
+      );
     });
 
     it('should cache template discovery results', async () => {
       // First call
       const templates1 = await templateManager.discoverTemplates(tempDir);
-      
+
       // Second call should use cache
       const templates2 = await templateManager.discoverTemplates(tempDir);
 

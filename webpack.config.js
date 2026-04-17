@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require('node:path');
 
 const config = {
   target: 'node',
@@ -7,7 +7,9 @@ const config = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'extension.js',
-    libraryTarget: 'commonjs2',
+    library: {
+      type: 'commonjs2',
+    },
   },
   devtool: 'nosources-source-map',
   externals: {

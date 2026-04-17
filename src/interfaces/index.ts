@@ -1,4 +1,12 @@
-import { ProjectContext, TemplateType, ConfigurationFile, CodebotError, FileSystemEntry, TemplateStructure, ProcessedTemplate } from '../types';
+import type {
+  CodebotError,
+  ConfigurationFile,
+  FileSystemEntry,
+  ProcessedTemplate,
+  ProjectContext,
+  TemplateStructure,
+  TemplateType,
+} from '../types';
 
 export interface IProjectDetector {
   detectProject(folderPath: string): Promise<ProjectContext>;
@@ -17,7 +25,10 @@ export interface ITemplateManager {
   processTemplate(templatePath: string, componentName: string): Promise<string>;
   getTemplateFiles(templateType: string): string[];
   scanTemplateStructure(templatePath: string): Promise<TemplateStructure>;
-  processTemplateHierarchy(templateStructure: TemplateStructure, componentName: string): Promise<ProcessedTemplate>;
+  processTemplateHierarchy(
+    templateStructure: TemplateStructure,
+    componentName: string,
+  ): Promise<ProcessedTemplate>;
   invalidateCache(): void;
 }
 
@@ -35,15 +46,22 @@ export interface IFileSystemManager {
 }
 
 export interface IPathResolver {
-  resolveTemplatePath(projectContext: ProjectContext, templateName: string): string;
-  resolveTargetPath(projectContext: ProjectContext, componentName: string, selectedFolderPath?: string): string;
+  resolveTemplatePath(
+    projectContext: ProjectContext,
+    templateName: string,
+  ): string;
+  resolveTargetPath(
+    projectContext: ProjectContext,
+    componentName: string,
+    selectedFolderPath?: string,
+  ): string;
   validatePath(path: string): boolean;
   sanitizePath(path: string): string;
 }
 
 export interface IErrorHandler {
   handleError(error: CodebotError): void;
-  createError(type: string, message: string, details?: any): CodebotError;
+  createError(type: string, message: string, details?: unknown): CodebotError;
   isRecoverable(error: CodebotError): boolean;
 }
 

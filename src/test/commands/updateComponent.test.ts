@@ -1,23 +1,25 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { updateComponent } from '../../commands/updateComponent';
 import { FileSystemManager } from '../../managers/FileSystemManager';
-import { CommandArgs, ErrorType } from '../../types';
+import type { CommandArgs } from '../../types';
 
 // Mock VS Code API
 jest.mock('vscode', () => ({
   workspace: {
-    workspaceFolders: [{
-      uri: { fsPath: '/test/workspace' }
-    }]
+    workspaceFolders: [
+      {
+        uri: { fsPath: '/test/workspace' },
+      },
+    ],
   },
   window: {
     showInputBox: jest.fn(),
     showQuickPick: jest.fn(),
     showInformationMessage: jest.fn(),
-    showErrorMessage: jest.fn()
-  }
+    showErrorMessage: jest.fn(),
+  },
 }));
 
 // Mock helpers
@@ -28,22 +30,24 @@ jest.mock('../../helpers', () => ({
   createFile: jest.fn(),
   checkExistsFile: jest.fn(),
   formatTemplateName: jest.fn((templateFile, templateName, componentName) => {
-    return templateFile.replace('.hbs', '').replace(templateName, componentName);
-  })
+    return templateFile
+      .replace('.hbs', '')
+      .replace(templateName, componentName);
+  }),
 }));
 
 describe('updateComponent with hierarchical support', () => {
   let tempDir: string;
   let fileSystemManager: FileSystemManager;
-  let mockHelpers: any;
+  let mockHelpers: jest.Mocked<typeof import('../../helpers')>;
 
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codebot-update-test-'));
     fileSystemManager = new FileSystemManager();
-    
+
     // Get mocked helpers
     mockHelpers = require('../../helpers');
-    
+
     // Reset all mocks
     jest.clearAllMocks();
   });
@@ -62,7 +66,7 @@ describe('updateComponent with hierarchical support', () => {
         'component.test.hbs': 'describe("{{name}}", () => {});',
         'styles/component.css.hbs': '.{{name}} { color: red; }',
         'styles/themes/light.css.hbs': '.{{name}}.light { background: white; }',
-        'utils/helper.js.hbs': 'export const {{name}}Helper = () => {};'
+        'utils/helper.js.hbs': 'export const {{name}}Helper = () => {};',
       };
 
       const templatesDir = path.join(tempDir, 'templates', 'react-component');
@@ -80,7 +84,7 @@ describe('updateComponent with hierarchical support', () => {
 
     it('should create missing files in hierarchical structure', async () => {
       const componentDir = path.join(tempDir, 'UserProfile');
-      
+
       // Mock helpers to simulate user interactions
       mockHelpers.showSearchDropdown.mockResolvedValue('react-component');
       mockHelpers.checkExistsFile.mockImplementation((filePath: string) => {
@@ -89,10 +93,12 @@ describe('updateComponent with hierarchical support', () => {
       mockHelpers.createFolder.mockImplementation((folderPath: string) => {
         fs.mkdirSync(folderPath, { recursive: true });
       });
-      mockHelpers.createFile.mockImplementation((filePath: string, content: string) => {
-        fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        fs.writeFileSync(filePath, content);
-      });
+      mockHelpers.createFile.mockImplementation(
+        (filePath: string, content: string) => {
+          fs.mkdirSync(path.dirname(filePath), { recursive: true });
+          fs.writeFileSync(filePath, content);
+        },
+      );
 
       const args: CommandArgs = { fsPath: componentDir };
 
@@ -101,17 +107,17 @@ describe('updateComponent with hierarchical support', () => {
       // Verify error message was shown (no templates found)
       expect(mockHelpers.showMessage).toHaveBeenCalledWith(
         expect.stringContaining('No templates found in project'),
-        'error'
+        'error',
       );
     });
 
     it('should skip existing files and only create missing ones', async () => {
       const componentDir = path.join(tempDir, 'UserProfile');
-      
+
       // Pre-create some files to simulate existing component
       const existingFiles = [
         'UserProfile.js', // component.hbs -> UserProfile.js
-        'styles/UserProfile.css' // styles/component.css.hbs -> styles/UserProfile.css
+        'styles/UserProfile.css', // styles/component.css.hbs -> styles/UserProfile.css
       ];
 
       for (const file of existingFiles) {
@@ -129,12 +135,14 @@ describe('updateComponent with hierarchical support', () => {
           fs.mkdirSync(folderPath, { recursive: true });
         }
       });
-      mockHelpers.createFile.mockImplementation((filePath: string, content: string) => {
-        if (!fs.existsSync(filePath)) {
-          fs.mkdirSync(path.dirname(filePath), { recursive: true });
-          fs.writeFileSync(filePath, content);
-        }
-      });
+      mockHelpers.createFile.mockImplementation(
+        (filePath: string, content: string) => {
+          if (!fs.existsSync(filePath)) {
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
+            fs.writeFileSync(filePath, content);
+          }
+        },
+      );
 
       const args: CommandArgs = { fsPath: componentDir };
 
@@ -143,7 +151,7 @@ describe('updateComponent with hierarchical support', () => {
       // Verify error message was shown (no templates found)
       expect(mockHelpers.showMessage).toHaveBeenCalledWith(
         expect.stringContaining('No templates found in project'),
-        'error'
+        'error',
       );
     });
 
@@ -153,7 +161,7 @@ describe('updateComponent with hierarchical support', () => {
       const templateStructure = {
         'styles/main.css.hbs': '.{{name}} { display: block; }',
         'styles/themes/dark.css.hbs': '.{{name}}.dark { color: white; }',
-        'assets/icons/icon.svg.hbs': '<svg>{{name}}</svg>'
+        'assets/icons/icon.svg.hbs': '<svg>{{name}}</svg>',
       };
 
       await fileSystemManager.createFolderRecursive(templateDir);
@@ -173,10 +181,12 @@ describe('updateComponent with hierarchical support', () => {
       mockHelpers.createFolder.mockImplementation((folderPath: string) => {
         fs.mkdirSync(folderPath, { recursive: true });
       });
-      mockHelpers.createFile.mockImplementation((filePath: string, content: string) => {
-        fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        fs.writeFileSync(filePath, content);
-      });
+      mockHelpers.createFile.mockImplementation(
+        (filePath: string, content: string) => {
+          fs.mkdirSync(path.dirname(filePath), { recursive: true });
+          fs.writeFileSync(filePath, content);
+        },
+      );
 
       const args: CommandArgs = { fsPath: componentDir };
 
@@ -185,20 +195,20 @@ describe('updateComponent with hierarchical support', () => {
       // Should show error message (no templates found)
       expect(mockHelpers.showMessage).toHaveBeenCalledWith(
         expect.stringContaining('No templates found in project'),
-        'error'
+        'error',
       );
     });
 
     it('should report when component is already up to date', async () => {
       const componentDir = path.join(tempDir, 'ExistingComponent');
-      
+
       // Pre-create all template files
       const allFiles = [
         'ExistingComponent.js',
         'ExistingComponent.test.js',
         'styles/ExistingComponent.css',
         'styles/themes/light.css',
-        'utils/helper.js'
+        'utils/helper.js',
       ];
 
       for (const file of allFiles) {
@@ -219,7 +229,7 @@ describe('updateComponent with hierarchical support', () => {
       // Should show error message (no templates found)
       expect(mockHelpers.showMessage).toHaveBeenCalledWith(
         expect.stringContaining('No templates found in project'),
-        'error'
+        'error',
       );
     });
   });
@@ -227,7 +237,11 @@ describe('updateComponent with hierarchical support', () => {
   describe('error handling', () => {
     it('should handle empty template structures', async () => {
       // Create empty template directory
-      const emptyTemplateDir = path.join(tempDir, 'templates', 'empty-template');
+      const emptyTemplateDir = path.join(
+        tempDir,
+        'templates',
+        'empty-template',
+      );
       await fileSystemManager.createFolderRecursive(emptyTemplateDir);
 
       const componentDir = path.join(tempDir, 'TestComponent');
@@ -245,7 +259,7 @@ describe('updateComponent with hierarchical support', () => {
       // Should show error for no templates found
       expect(mockHelpers.showMessage).toHaveBeenCalledWith(
         expect.stringContaining('No templates found in project'),
-        'error'
+        'error',
       );
     });
 
@@ -267,7 +281,7 @@ describe('updateComponent with hierarchical support', () => {
       // Should show error message (no templates found)
       expect(mockHelpers.showMessage).toHaveBeenCalledWith(
         expect.stringContaining('No templates found in project'),
-        'error'
+        'error',
       );
     });
   });

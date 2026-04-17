@@ -1,24 +1,29 @@
-import * as path from 'path';
-import { ProjectDetector } from '../managers/ProjectDetector';
-import { TemplateManager } from '../managers/TemplateManager';
-import { PathResolver } from '../utils/PathResolver';
-import { ConfigurationManager } from '../managers/ConfigurationManager';
-import { ErrorType, CommandArgs, TemplateType, ProcessedFile, ProcessedDirectory } from '../types';
+import * as path from 'node:path';
 import { CodebotError } from '../errors';
 import {
+  checkExistsFile,
+  createFile,
+  createFolder,
   showMessage,
   showSearchDropdown,
-  createFolder,
-  createFile,
-  checkExistsFile,
-  formatTemplateName,
 } from '../helpers';
+import { ConfigurationManager } from '../managers/ConfigurationManager';
+import { ProjectDetector } from '../managers/ProjectDetector';
+import { TemplateManager } from '../managers/TemplateManager';
+import {
+  type CommandArgs,
+  ErrorType,
+  type ProcessedDirectory,
+  type ProcessedFile,
+  type TemplateType,
+} from '../types';
+import { PathResolver } from '../utils/PathResolver';
 
 export async function updateComponent(args: CommandArgs) {
   const projectDetector = new ProjectDetector();
   const templateManager = new TemplateManager();
   const pathResolver = new PathResolver();
-  const configurationManager = new ConfigurationManager();
+  const _configurationManager = new ConfigurationManager();
 
   try {
     // Step 1: Detect project context using ProjectDetector
@@ -28,11 +33,12 @@ export async function updateComponent(args: CommandArgs) {
         ErrorType.WORKSPACE_NOT_FOUND,
         'No folder path provided for component update',
         { args },
-        false
+        false,
       );
     }
 
-    const projectContext = await projectDetector.detectProject(currentFolderPath);
+    const projectContext =
+      await projectDetector.detectProject(currentFolderPath);
 
     // Step 2: Extract component name from folder path
     const componentName = path.basename(currentFolderPath);
@@ -41,7 +47,7 @@ export async function updateComponent(args: CommandArgs) {
         ErrorType.INVALID_COMPONENT_NAME,
         'Cannot determine component name from folder path',
         { currentFolderPath },
-        true
+        true,
       );
     }
 
@@ -51,23 +57,25 @@ export async function updateComponent(args: CommandArgs) {
         ErrorType.INVALID_COMPONENT_NAME,
         `Invalid component name: ${componentName}. Component names must be valid file/folder names.`,
         { componentName, folderPath: currentFolderPath },
-        true
+        true,
       );
     }
 
     // Step 4: Discover templates using TemplateManager with hierarchical discovery
-    const availableTemplates = await templateManager.discoverTemplates(projectContext.projectRoot);
-    
+    const availableTemplates = await templateManager.discoverTemplates(
+      projectContext.projectRoot,
+    );
+
     if (availableTemplates.length === 0) {
       throw new CodebotError(
         ErrorType.TEMPLATE_FOLDER_EMPTY,
         `No templates found in project. Searched in: ${projectContext.templatePath}`,
-        { 
+        {
           projectRoot: projectContext.projectRoot,
           templatePath: projectContext.templatePath,
-          isMultiProject: projectContext.isMultiProject
+          isMultiProject: projectContext.isMultiProject,
         },
-        true
+        true,
       );
     }
 
@@ -89,11 +97,13 @@ export async function updateComponent(args: CommandArgs) {
           ErrorType.TEMPLATE_NOT_FOUND,
           'No template type selected',
           { availableTemplates: templateNames },
-          true
+          true,
         );
       }
 
-      selectedTemplate = availableTemplates.find(t => t.name === selectedTemplateName);
+      selectedTemplate = availableTemplates.find(
+        t => t.name === selectedTemplateName,
+      );
     }
 
     if (!selectedTemplate) {
@@ -101,34 +111,46 @@ export async function updateComponent(args: CommandArgs) {
         ErrorType.TEMPLATE_NOT_FOUND,
         'Selected template not found',
         { availableTemplates },
-        false
+        false,
       );
     }
 
     // Step 6: Validate target path is within project boundaries
     const targetBasePath = currentFolderPath;
-    
+
     // Ensure the target path is within project boundaries using PathResolver
     try {
-      pathResolver.resolveTargetPath(projectContext, componentName, path.dirname(currentFolderPath));
+      pathResolver.resolveTargetPath(
+        projectContext,
+        componentName,
+        path.dirname(currentFolderPath),
+      );
     } catch (pathError) {
       throw new CodebotError(
         ErrorType.FILE_SYSTEM_ERROR,
         `Target path validation failed: ${pathError instanceof Error ? pathError.message : 'Unknown error'}`,
         { targetPath: targetBasePath, projectContext },
-        false
+        false,
       );
     }
-    
+
     // Step 7: Process templates hierarchically and update files (only create missing files)
-    const templateStructure = await templateManager.scanTemplateStructure(selectedTemplate.path);
-    
-    if (templateStructure.files.length === 0 && templateStructure.directories.length === 0) {
+    const templateStructure = await templateManager.scanTemplateStructure(
+      selectedTemplate.path,
+    );
+
+    if (
+      templateStructure.files.length === 0 &&
+      templateStructure.directories.length === 0
+    ) {
       throw new CodebotError(
         ErrorType.TEMPLATE_FOLDER_EMPTY,
         `Template folder is empty: ${selectedTemplate.path}`,
-        { templatePath: selectedTemplate.path, templateName: selectedTemplate.name },
-        false
+        {
+          templatePath: selectedTemplate.path,
+          templateName: selectedTemplate.name,
+        },
+        false,
       );
     }
 
@@ -138,22 +160,29 @@ export async function updateComponent(args: CommandArgs) {
     }
 
     // Process the template hierarchy
-    const processedTemplate = await templateManager.processTemplateHierarchy(templateStructure, componentName);
-    
+    const processedTemplate = await templateManager.processTemplateHierarchy(
+      templateStructure,
+      componentName,
+    );
+
     // Track creation and skipping statistics
     const creationReport = {
       filesCreated: 0,
       filesSkipped: 0,
       directoriesCreated: 0,
       createdFiles: [] as string[],
-      skippedFiles: [] as string[]
+      skippedFiles: [] as string[],
     };
 
     // Process root-level files
     await processFiles(processedTemplate.files, targetBasePath, creationReport);
-    
+
     // Process directories recursively
-    await processDirectories(processedTemplate.directories, targetBasePath, creationReport);
+    await processDirectories(
+      processedTemplate.directories,
+      targetBasePath,
+      creationReport,
+    );
 
     // Step 8: Show success message with details
     let successMessage = `Component '${componentName}' updated successfully!`;
@@ -175,25 +204,34 @@ export async function updateComponent(args: CommandArgs) {
     }
 
     showMessage(successMessage, 'information');
-
   } catch (error) {
     // Handle multi-project specific errors
     if (error instanceof CodebotError) {
       let errorMessage = error.message;
-      
+
       // Add context for multi-project scenarios
-      if (error.type === ErrorType.TEMPLATE_FOLDER_EMPTY && error.details?.isMultiProject) {
-        errorMessage += '\n\nTip: In multi-project workspaces, templates can be placed in:';
-        errorMessage += `\n- Project-specific: ${error.details.projectRoot}/templates`;
-        errorMessage += `\n- Workspace-wide: ${error.details.workspaceRoot}/templates`;
+      const details =
+        typeof error.details === 'object' && error.details !== null
+          ? (error.details as Record<string, unknown>)
+          : null;
+      if (
+        error.type === ErrorType.TEMPLATE_FOLDER_EMPTY &&
+        details?.isMultiProject
+      ) {
+        errorMessage +=
+          '\n\nTip: In multi-project workspaces, templates can be placed in:';
+        errorMessage += `\n- Project-specific: ${details.projectRoot}/templates`;
+        errorMessage += `\n- Workspace-wide: ${details.workspaceRoot}/templates`;
       }
-      
+
       if (error.type === ErrorType.PROJECT_DETECTION_ERROR) {
-        errorMessage += '\n\nTip: Ensure you are running the command from within a valid project folder.';
+        errorMessage +=
+          '\n\nTip: Ensure you are running the command from within a valid project folder.';
       }
 
       if (error.type === ErrorType.INVALID_COMPONENT_NAME) {
-        errorMessage += '\n\nTip: For update operations, make sure you are right-clicking on a component folder.';
+        errorMessage +=
+          '\n\nTip: For update operations, make sure you are right-clicking on a component folder.';
       }
 
       showMessage(errorMessage, 'error');
@@ -203,9 +241,9 @@ export async function updateComponent(args: CommandArgs) {
         ErrorType.FILE_SYSTEM_ERROR,
         `Unexpected error during component update: ${error.message}`,
         { originalError: error.message, stack: error.stack },
-        false
+        false,
       );
-      
+
       showMessage(unexpectedError.message, 'error');
     } else {
       // Handle unknown errors
@@ -216,15 +254,15 @@ export async function updateComponent(args: CommandArgs) {
 
 // Helper function to process files hierarchically
 async function processFiles(
-  files: ProcessedFile[], 
-  basePath: string, 
+  files: ProcessedFile[],
+  basePath: string,
   creationReport: {
     filesCreated: number;
     filesSkipped: number;
     directoriesCreated: number;
     createdFiles: string[];
     skippedFiles: string[];
-  }
+  },
 ): Promise<void> {
   for (const file of files) {
     const targetFilePath = path.join(basePath, file.targetPath);
@@ -246,7 +284,7 @@ async function processFiles(
         ErrorType.TEMPLATE_PROCESSING_ERROR,
         `Failed to create file: ${file.targetPath}`,
         { targetPath: targetFilePath, error },
-        false
+        false,
       );
     }
   }
@@ -254,15 +292,15 @@ async function processFiles(
 
 // Helper function to process directories hierarchically
 async function processDirectories(
-  directories: ProcessedDirectory[], 
-  basePath: string, 
+  directories: ProcessedDirectory[],
+  basePath: string,
   creationReport: {
     filesCreated: number;
     filesSkipped: number;
     directoriesCreated: number;
     createdFiles: string[];
     skippedFiles: string[];
-  }
+  },
 ): Promise<void> {
   for (const directory of directories) {
     const targetDirPath = path.join(basePath, directory.targetPath);
@@ -275,8 +313,12 @@ async function processDirectories(
 
     // Process files in this directory
     await processFiles(directory.files, basePath, creationReport);
-    
+
     // Process subdirectories recursively
-    await processDirectories(directory.subdirectories, basePath, creationReport);
+    await processDirectories(
+      directory.subdirectories,
+      basePath,
+      creationReport,
+    );
   }
 }

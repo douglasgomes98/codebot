@@ -2,10 +2,15 @@ import { ErrorType } from '../types';
 
 export class CodebotError extends Error {
   public readonly type: ErrorType;
-  public readonly details?: any;
+  public readonly details?: unknown;
   public readonly recoverable: boolean;
 
-  constructor(type: ErrorType, message: string, details?: any, recoverable: boolean = false) {
+  constructor(
+    type: ErrorType,
+    message: string,
+    details?: unknown,
+    recoverable = false,
+  ) {
     super(message);
     this.name = 'CodebotError';
     this.type = type;
@@ -18,7 +23,7 @@ export class CodebotError extends Error {
       ErrorType.WORKSPACE_NOT_FOUND,
       'Workspace path not found!',
       undefined,
-      false
+      false,
     );
   }
 
@@ -27,7 +32,7 @@ export class CodebotError extends Error {
       ErrorType.INVALID_COMPONENT_NAME,
       'Invalid component name!',
       { providedName: name },
-      true
+      true,
     );
   }
 
@@ -36,7 +41,7 @@ export class CodebotError extends Error {
       ErrorType.TEMPLATE_FOLDER_EMPTY,
       'Templates folder is empty!',
       { templatePath: path },
-      true
+      true,
     );
   }
 
@@ -45,43 +50,56 @@ export class CodebotError extends Error {
       ErrorType.TEMPLATE_NOT_FOUND,
       'Template folder not found!',
       { templateType },
-      true
+      true,
     );
   }
 
-  static fileSystemError(operation: string, path: string, originalError?: Error): CodebotError {
+  static fileSystemError(
+    operation: string,
+    path: string,
+    originalError?: Error,
+  ): CodebotError {
     return new CodebotError(
       ErrorType.FILE_SYSTEM_ERROR,
       `File system error during ${operation}`,
       { path, originalError: originalError?.message },
-      false
+      false,
     );
   }
 
-  static templateProcessingError(templatePath: string, originalError?: Error): CodebotError {
+  static templateProcessingError(
+    templatePath: string,
+    originalError?: Error,
+  ): CodebotError {
     return new CodebotError(
       ErrorType.TEMPLATE_PROCESSING_ERROR,
       'Error processing template',
       { templatePath, originalError: originalError?.message },
-      true
+      true,
     );
   }
 
-  static projectDetectionError(folderPath: string, originalError?: Error): CodebotError {
+  static projectDetectionError(
+    folderPath: string,
+    originalError?: Error,
+  ): CodebotError {
     return new CodebotError(
       ErrorType.PROJECT_DETECTION_ERROR,
       'Error detecting project context',
       { folderPath, originalError: originalError?.message },
-      true
+      true,
     );
   }
 
-  static configurationError(configPath: string, originalError?: Error): CodebotError {
+  static configurationError(
+    configPath: string,
+    originalError?: Error,
+  ): CodebotError {
     return new CodebotError(
       ErrorType.CONFIGURATION_ERROR,
       'Error loading configuration',
       { configPath, originalError: originalError?.message },
-      true
+      true,
     );
   }
 
@@ -90,7 +108,7 @@ export class CodebotError extends Error {
       ErrorType.FILE_SYSTEM_ERROR,
       `Invalid path: ${reason}`,
       { path, reason },
-      true
+      true,
     );
   }
 
@@ -99,16 +117,19 @@ export class CodebotError extends Error {
       ErrorType.FILE_SYSTEM_ERROR,
       'Path traversal attempt detected',
       { path },
-      false
+      false,
     );
   }
 
-  static pathOutsideBoundariesError(path: string, projectRoot: string): CodebotError {
+  static pathOutsideBoundariesError(
+    path: string,
+    projectRoot: string,
+  ): CodebotError {
     return new CodebotError(
       ErrorType.FILE_SYSTEM_ERROR,
       'Path is outside project boundaries',
       { path, projectRoot },
-      false
+      false,
     );
   }
 }

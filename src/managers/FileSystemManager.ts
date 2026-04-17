@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { IFileSystemManager } from '../interfaces';
-import { FileSystemEntry, ErrorType, CodebotError } from '../types';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import type { IFileSystemManager } from '../interfaces';
+import { type CodebotError, ErrorType, type FileSystemEntry } from '../types';
 
 export class FileSystemManager implements IFileSystemManager {
   private static readonly MAX_DEPTH = 15; // Security limit for directory depth
@@ -11,10 +11,13 @@ export class FileSystemManager implements IFileSystemManager {
       // Ensure directory exists before creating file
       const dir = path.dirname(filePath);
       await this.createFolderRecursive(dir);
-      
+
       fs.writeFileSync(filePath, content, { encoding: 'utf-8' });
     } catch (error) {
-      throw this.createFileSystemError(`Failed to create file: ${filePath}`, error);
+      throw this.createFileSystemError(
+        `Failed to create file: ${filePath}`,
+        error,
+      );
     }
   }
 
@@ -24,7 +27,10 @@ export class FileSystemManager implements IFileSystemManager {
         fs.mkdirSync(folderPath);
       }
     } catch (error) {
-      throw this.createFileSystemError(`Failed to create folder: ${folderPath}`, error);
+      throw this.createFileSystemError(
+        `Failed to create folder: ${folderPath}`,
+        error,
+      );
     }
   }
 
@@ -34,7 +40,10 @@ export class FileSystemManager implements IFileSystemManager {
         fs.mkdirSync(folderPath, { recursive: true });
       }
     } catch (error) {
-      throw this.createFileSystemError(`Failed to create folder recursively: ${folderPath}`, error);
+      throw this.createFileSystemError(
+        `Failed to create folder recursively: ${folderPath}`,
+        error,
+      );
     }
   }
 
@@ -60,19 +69,22 @@ export class FileSystemManager implements IFileSystemManager {
     try {
       return fs.readFileSync(filePath, 'utf8');
     } catch (error) {
-      throw this.createFileSystemError(`Failed to read file: ${filePath}`, error);
+      throw this.createFileSystemError(
+        `Failed to read file: ${filePath}`,
+        error,
+      );
     }
   }
 
   async listFiles(folderPath: string): Promise<string[]> {
     try {
-      if (!await this.folderExists(folderPath)) {
+      if (!(await this.folderExists(folderPath))) {
         return [];
       }
-      
+
       const entries = fs.readdirSync(folderPath);
       const files: string[] = [];
-      
+
       for (const entry of entries) {
         const fullPath = path.join(folderPath, entry);
         const stats = fs.statSync(fullPath);
@@ -80,22 +92,25 @@ export class FileSystemManager implements IFileSystemManager {
           files.push(entry);
         }
       }
-      
+
       return files;
     } catch (error) {
-      throw this.createFileSystemError(`Failed to list files in: ${folderPath}`, error);
+      throw this.createFileSystemError(
+        `Failed to list files in: ${folderPath}`,
+        error,
+      );
     }
   }
 
   async listDirectories(folderPath: string): Promise<string[]> {
     try {
-      if (!await this.folderExists(folderPath)) {
+      if (!(await this.folderExists(folderPath))) {
         return [];
       }
-      
+
       const entries = fs.readdirSync(folderPath);
       const directories: string[] = [];
-      
+
       for (const entry of entries) {
         const fullPath = path.join(folderPath, entry);
         const stats = fs.statSync(fullPath);
@@ -103,20 +118,29 @@ export class FileSystemManager implements IFileSystemManager {
           directories.push(entry);
         }
       }
-      
+
       return directories;
     } catch (error) {
-      throw this.createFileSystemError(`Failed to list directories in: ${folderPath}`, error);
+      throw this.createFileSystemError(
+        `Failed to list directories in: ${folderPath}`,
+        error,
+      );
     }
   }
 
-  async listFilesRecursive(folderPath: string, currentDepth: number = 0): Promise<FileSystemEntry[]> {
+  async listFilesRecursive(
+    folderPath: string,
+    currentDepth = 0,
+  ): Promise<FileSystemEntry[]> {
     if (currentDepth > FileSystemManager.MAX_DEPTH) {
-      throw this.createFileSystemError(`Maximum directory depth exceeded: ${FileSystemManager.MAX_DEPTH}`, null);
+      throw this.createFileSystemError(
+        `Maximum directory depth exceeded: ${FileSystemManager.MAX_DEPTH}`,
+        null,
+      );
     }
 
     try {
-      if (!await this.folderExists(folderPath)) {
+      if (!(await this.folderExists(folderPath))) {
         return [];
       }
 
@@ -129,20 +153,23 @@ export class FileSystemManager implements IFileSystemManager {
         const relativePath = path.relative(folderPath, fullPath);
 
         if (stats.isDirectory()) {
-          const children = await this.listFilesRecursive(fullPath, currentDepth + 1);
+          const children = await this.listFilesRecursive(
+            fullPath,
+            currentDepth + 1,
+          );
           entries.push({
             name: item,
             path: fullPath,
             relativePath,
             isDirectory: true,
-            children
+            children,
           });
         } else {
           entries.push({
             name: item,
             path: fullPath,
             relativePath,
-            isDirectory: false
+            isDirectory: false,
           });
         }
       }
@@ -150,33 +177,59 @@ export class FileSystemManager implements IFileSystemManager {
       return entries;
     } catch (error) {
       // Re-throw CodebotError instances (including depth errors) without wrapping
-      if (error && typeof error === 'object' && 'type' in error && error.type === ErrorType.FILE_SYSTEM_ERROR) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'type' in error &&
+        error.type === ErrorType.FILE_SYSTEM_ERROR
+      ) {
         throw error;
       }
-      throw this.createFileSystemError(`Failed to list files recursively in: ${folderPath}`, error);
+      throw this.createFileSystemError(
+        `Failed to list files recursively in: ${folderPath}`,
+        error,
+      );
     }
   }
 
-  async copyDirectoryStructure(sourcePath: string, targetPath: string): Promise<void> {
+  async copyDirectoryStructure(
+    sourcePath: string,
+    targetPath: string,
+  ): Promise<void> {
     try {
-      if (!await this.folderExists(sourcePath)) {
-        throw this.createFileSystemError(`Source directory does not exist: ${sourcePath}`, null);
+      if (!(await this.folderExists(sourcePath))) {
+        throw this.createFileSystemError(
+          `Source directory does not exist: ${sourcePath}`,
+          null,
+        );
       }
 
       await this.createFolderRecursive(targetPath);
-      
+
       const entries = await this.listFilesRecursive(sourcePath);
       await this.copyEntriesRecursive(entries, sourcePath, targetPath);
     } catch (error) {
       // Re-throw CodebotError instances without wrapping
-      if (error && typeof error === 'object' && 'type' in error && error.type === ErrorType.FILE_SYSTEM_ERROR) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'type' in error &&
+        error.type === ErrorType.FILE_SYSTEM_ERROR
+      ) {
         throw error;
       }
-      throw this.createFileSystemError(`Failed to copy directory structure from ${sourcePath} to ${targetPath}`, error);
+      throw this.createFileSystemError(
+        `Failed to copy directory structure from ${sourcePath} to ${targetPath}`,
+        error,
+      );
     }
   }
 
-  private async copyEntriesRecursive(entries: FileSystemEntry[], sourcePath: string, targetPath: string): Promise<void> {
+  private async copyEntriesRecursive(
+    entries: FileSystemEntry[],
+    sourcePath: string,
+    targetPath: string,
+  ): Promise<void> {
     for (const entry of entries) {
       const sourceEntryPath = entry.path;
       const relativeToSource = path.relative(sourcePath, sourceEntryPath);
@@ -185,7 +238,11 @@ export class FileSystemManager implements IFileSystemManager {
       if (entry.isDirectory) {
         await this.createFolderRecursive(targetEntryPath);
         if (entry.children) {
-          await this.copyEntriesRecursive(entry.children, sourcePath, targetPath);
+          await this.copyEntriesRecursive(
+            entry.children,
+            sourcePath,
+            targetPath,
+          );
         }
       } else {
         const content = await this.readFile(sourceEntryPath);
@@ -194,12 +251,15 @@ export class FileSystemManager implements IFileSystemManager {
     }
   }
 
-  private createFileSystemError(message: string, originalError: any): CodebotError {
+  private createFileSystemError(
+    message: string,
+    originalError: unknown,
+  ): CodebotError {
     return {
       type: ErrorType.FILE_SYSTEM_ERROR,
       message,
       details: originalError,
-      recoverable: false
+      recoverable: false,
     };
   }
 }

@@ -1,9 +1,9 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { DirectoryProcessor } from '../../utils/DirectoryProcessor';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { FileSystemManager } from '../../managers/FileSystemManager';
-import { TemplateStructure, ErrorType } from '../../types';
+import { ErrorType } from '../../types';
+import { DirectoryProcessor } from '../../utils/DirectoryProcessor';
 
 describe('DirectoryProcessor', () => {
   let directoryProcessor: DirectoryProcessor;
@@ -33,7 +33,7 @@ describe('DirectoryProcessor', () => {
         'level1/file2.css': 'level1 content 2',
         'level1/level2/file3.hbs': 'level2 content 1',
         'level1/level2/level3/file4.html': 'level3 content 1',
-        'another-level1/file5.hbs': 'another level1 content'
+        'another-level1/file5.hbs': 'another level1 content',
       };
 
       for (const [filePath, content] of Object.entries(structure)) {
@@ -56,13 +56,17 @@ describe('DirectoryProcessor', () => {
       expect(level1Dir?.subdirectories).toHaveLength(1); // level2
 
       // Check level2 directory
-      const level2Dir = level1Dir?.subdirectories.find(d => d.name === 'level2');
+      const level2Dir = level1Dir?.subdirectories.find(
+        d => d.name === 'level2',
+      );
       expect(level2Dir).toBeDefined();
       expect(level2Dir?.files).toHaveLength(1); // file3.hbs
       expect(level2Dir?.subdirectories).toHaveLength(1); // level3
 
       // Check level3 directory
-      const level3Dir = level2Dir?.subdirectories.find(d => d.name === 'level3');
+      const level3Dir = level2Dir?.subdirectories.find(
+        d => d.name === 'level3',
+      );
       expect(level3Dir).toBeDefined();
       expect(level3Dir?.files).toHaveLength(1); // file4.html
       expect(level3Dir?.subdirectories).toHaveLength(0);
@@ -99,11 +103,12 @@ describe('DirectoryProcessor', () => {
     it('should throw error for non-existent directory', async () => {
       const nonExistentDir = path.join(tempDir, 'nonexistent');
 
-      await expect(directoryProcessor.scanTemplateStructure(nonExistentDir))
-        .rejects.toMatchObject({
-          type: ErrorType.TEMPLATE_PROCESSING_ERROR,
-          message: expect.stringContaining('Template directory does not exist')
-        });
+      await expect(
+        directoryProcessor.scanTemplateStructure(nonExistentDir),
+      ).rejects.toMatchObject({
+        type: ErrorType.TEMPLATE_PROCESSING_ERROR,
+        message: expect.stringContaining('Template directory does not exist'),
+      });
     });
   });
 
@@ -111,7 +116,7 @@ describe('DirectoryProcessor', () => {
     it('should pass validation for normal depth', async () => {
       // Create structure with depth 3
       const structure = {
-        'level1/level2/level3/file.hbs': 'content'
+        'level1/level2/level3/file.hbs': 'content',
       };
 
       for (const [filePath, content] of Object.entries(structure)) {
@@ -119,9 +124,12 @@ describe('DirectoryProcessor', () => {
         await fileSystemManager.createFile(fullPath, content);
       }
 
-      const templateStructure = await directoryProcessor.scanTemplateStructure(tempDir);
+      const templateStructure =
+        await directoryProcessor.scanTemplateStructure(tempDir);
 
-      expect(() => directoryProcessor.validateDepth(templateStructure)).not.toThrow();
+      expect(() =>
+        directoryProcessor.validateDepth(templateStructure),
+      ).not.toThrow();
     });
 
     it('should throw error when maximum depth is exceeded', async () => {
@@ -130,14 +138,18 @@ describe('DirectoryProcessor', () => {
       for (let i = 0; i < 17; i++) {
         deepPath = path.join(deepPath, `level${i}`);
       }
-      await fileSystemManager.createFile(path.join(deepPath, 'file.hbs'), 'content');
+      await fileSystemManager.createFile(
+        path.join(deepPath, 'file.hbs'),
+        'content',
+      );
 
       // The error should be thrown during scanning, not validation
-      await expect(directoryProcessor.scanTemplateStructure(tempDir))
-        .rejects.toMatchObject({
-          type: ErrorType.FILE_SYSTEM_ERROR,
-          message: expect.stringContaining('Maximum directory depth exceeded')
-        });
+      await expect(
+        directoryProcessor.scanTemplateStructure(tempDir),
+      ).rejects.toMatchObject({
+        type: ErrorType.FILE_SYSTEM_ERROR,
+        message: expect.stringContaining('Maximum directory depth exceeded'),
+      });
     });
   });
 
@@ -148,7 +160,7 @@ describe('DirectoryProcessor', () => {
         'style.css': 'css content',
         'script.js': 'js content',
         'config.json': 'json content',
-        'readme.md': 'markdown content'
+        'readme.md': 'markdown content',
       };
 
       for (const [filePath, content] of Object.entries(structure)) {
@@ -191,7 +203,7 @@ describe('DirectoryProcessor', () => {
         'utils/helpers.js.hbs': 'export const {{name}}Helper = () => {};',
         'utils/constants.js.hbs': 'export const {{name}}_CONSTANTS = {};',
         'assets/icons/icon.svg.hbs': '<svg>{{name}}</svg>',
-        'docs/README.md.hbs': '# {{name}} Component'
+        'docs/README.md.hbs': '# {{name}} Component',
       };
 
       for (const [filePath, content] of Object.entries(structure)) {
@@ -212,7 +224,9 @@ describe('DirectoryProcessor', () => {
       expect(stylesDir?.subdirectories).toHaveLength(1); // themes
 
       // Check themes subdirectory
-      const themesDir = stylesDir?.subdirectories.find(d => d.name === 'themes');
+      const themesDir = stylesDir?.subdirectories.find(
+        d => d.name === 'themes',
+      );
       expect(themesDir?.files).toHaveLength(2); // light.css.hbs, dark.css.hbs
 
       // Check utils directory
@@ -222,7 +236,7 @@ describe('DirectoryProcessor', () => {
       // Check assets directory with nested icons
       const assetsDir = structure.directories.find(d => d.name === 'assets');
       expect(assetsDir?.subdirectories).toHaveLength(1); // icons
-      
+
       const iconsDir = assetsDir?.subdirectories.find(d => d.name === 'icons');
       expect(iconsDir?.files).toHaveLength(1); // icon.svg.hbs
     });

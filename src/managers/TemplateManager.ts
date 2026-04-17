@@ -1,10 +1,19 @@
-import * as path from 'path';
+import * as path from 'node:path';
 import * as handlebars from 'handlebars';
-import { ITemplateManager, TemplateType, TemplateStructure, ProcessedTemplate, ProcessedFile, ProcessedDirectory } from '../types';
+import { DEFAULT_TEMPLATE_FOLDER, TEMPLATE_FILE_EXTENSION } from '../constants';
 import { CodebotError } from '../errors';
-import { TEMPLATE_FILE_EXTENSION, DEFAULT_TEMPLATE_FOLDER } from '../constants';
-import { ValidationUtils } from '../utils/validation';
+import type {
+  ITemplateManager,
+  ProcessedDirectory,
+  ProcessedFile,
+  ProcessedTemplate,
+  TemplateDirectoryInfo,
+  TemplateFileInfo,
+  TemplateStructure,
+  TemplateType,
+} from '../types';
 import { DirectoryProcessor } from '../utils/DirectoryProcessor';
+import { isTemplateFile } from '../utils/validation';
 import { FileSystemManager } from './FileSystemManager';
 
 interface TemplateCache {
@@ -47,7 +56,7 @@ export class TemplateManager implements ITemplateManager {
       this.templateCache.set(cacheKey, {
         templates,
         timestamp: Date.now(),
-        projectPath
+        projectPath,
       });
 
       return templates;
@@ -56,13 +65,18 @@ export class TemplateManager implements ITemplateManager {
     }
   }
 
-  async processTemplate(templatePath: string, componentName: string): Promise<string> {
+  async processTemplate(
+    templatePath: string,
+    componentName: string,
+  ): Promise<string> {
     try {
       // Check compiled cache first (cache by template path only, since compiled template is the same regardless of component name)
       const cached = this.compiledCache.get(templatePath);
 
       if (cached && this.isCacheValid(cached.timestamp)) {
-        return cached.compiled({ name: this.formatComponentName(componentName) });
+        return cached.compiled({
+          name: this.formatComponentName(componentName),
+        });
       }
 
       // Read and compile template
@@ -72,7 +86,7 @@ export class TemplateManager implements ITemplateManager {
       // Cache compiled template
       this.compiledCache.set(templatePath, {
         compiled,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return compiled({ name: this.formatComponentName(componentName) });
@@ -83,18 +97,21 @@ export class TemplateManager implements ITemplateManager {
 
   getTemplateFiles(templateType: string): string[] {
     try {
-      const fs = require('fs');
+      const fs = require('node:fs');
       const files = fs.readdirSync(templateType);
 
-      return files.filter((file: string) => ValidationUtils.isTemplateFile(file));
+      return files.filter((file: string) => isTemplateFile(file));
     } catch (error) {
       throw CodebotError.templateProcessingError(templateType, error as Error);
     }
   }
 
-  async scanTemplateStructure(templatePath: string): Promise<TemplateStructure> {
+  async scanTemplateStructure(
+    templatePath: string,
+  ): Promise<TemplateStructure> {
     try {
-      const structure = await this.directoryProcessor.scanTemplateStructure(templatePath);
+      const structure =
+        await this.directoryProcessor.scanTemplateStructure(templatePath);
 
       // Validate depth for security
       this.directoryProcessor.validateDepth(structure);
@@ -105,18 +122,33 @@ export class TemplateManager implements ITemplateManager {
     }
   }
 
-  async processTemplateHierarchy(templateStructure: TemplateStructure, componentName: string): Promise<ProcessedTemplate> {
+  async processTemplateHierarchy(
+    templateStructure: TemplateStructure,
+    componentName: string,
+  ): Promise<ProcessedTemplate> {
     try {
       // Extract template folder name from the root path
-      const templateFolderName = this.extractTemplateFolderName(templateStructure.rootPath);
-      
-      const processedFiles = await this.processFiles(templateStructure.files, componentName, '', templateFolderName);
-      const processedDirectories = await this.processDirectories(templateStructure.directories, componentName, '', templateFolderName);
+      const templateFolderName = this.extractTemplateFolderName(
+        templateStructure.rootPath,
+      );
+
+      const processedFiles = await this.processFiles(
+        templateStructure.files,
+        componentName,
+        '',
+        templateFolderName,
+      );
+      const processedDirectories = await this.processDirectories(
+        templateStructure.directories,
+        componentName,
+        '',
+        templateFolderName,
+      );
 
       const processedTemplate = {
         componentName,
         files: processedFiles,
-        directories: processedDirectories
+        directories: processedDirectories,
       };
 
       // Validate the processed template for integrity
@@ -124,7 +156,10 @@ export class TemplateManager implements ITemplateManager {
 
       return processedTemplate;
     } catch (error) {
-      throw CodebotError.templateProcessingError(templateStructure.rootPath, error as Error);
+      throw CodebotError.templateProcessingError(
+        templateStructure.rootPath,
+        error as Error,
+      );
     }
   }
 
@@ -136,7 +171,7 @@ export class TemplateManager implements ITemplateManager {
   getCacheStats(): { templateCacheSize: number; compiledCacheSize: number } {
     return {
       templateCacheSize: this.templateCache.size,
-      compiledCacheSize: this.compiledCache.size
+      compiledCacheSize: this.compiledCache.size,
     };
   }
 
@@ -166,12 +201,17 @@ export class TemplateManager implements ITemplateManager {
       try {
         await this.discoverTemplates(templatePath);
       } catch (error) {
-        throw CodebotError.templateProcessingError(templatePath, error as Error);
+        throw CodebotError.templateProcessingError(
+          templatePath,
+          error as Error,
+        );
       }
     }
   }
 
-  private async discoverTemplatesHierarchically(projectPath: string): Promise<TemplateType[]> {
+  private async discoverTemplatesHierarchically(
+    projectPath: string,
+  ): Promise<TemplateType[]> {
     const templatePaths = this.getTemplatePaths(projectPath);
     const allTemplates: TemplateType[] = [];
     const seenTemplates = new Set<string>();
@@ -202,21 +242,27 @@ export class TemplateManager implements ITemplateManager {
     // 2. Workspace root templates (if different from project)
     const workspaceRoot = this.findWorkspaceRoot(projectPath);
     if (workspaceRoot && workspaceRoot !== projectPath) {
-      const workspaceTemplatePath = path.join(workspaceRoot, DEFAULT_TEMPLATE_FOLDER);
+      const workspaceTemplatePath = path.join(
+        workspaceRoot,
+        DEFAULT_TEMPLATE_FOLDER,
+      );
       paths.push(workspaceTemplatePath);
     }
 
     return paths;
   }
 
-  private async discoverTemplatesInPath(templatePath: string): Promise<TemplateType[]> {
+  private async discoverTemplatesInPath(
+    templatePath: string,
+  ): Promise<TemplateType[]> {
     try {
       // Check if template directory exists
-      if (!await this.fileSystemManager.folderExists(templatePath)) {
+      if (!(await this.fileSystemManager.folderExists(templatePath))) {
         return []; // Directory doesn't exist
       }
 
-      const entries = await this.fileSystemManager.listDirectories(templatePath);
+      const entries =
+        await this.fileSystemManager.listDirectories(templatePath);
       const templates: TemplateType[] = [];
 
       for (const entry of entries) {
@@ -231,23 +277,25 @@ export class TemplateManager implements ITemplateManager {
             path: templateTypePath,
             files,
             hasSubdirectories,
-            structure
+            structure,
           });
         }
       }
 
       return templates;
-    } catch (error) {
+    } catch (_error) {
       // If we can't read the directory, return empty array
       return [];
     }
   }
 
-  private async getTemplateFilesInDirectory(directoryPath: string): Promise<string[]> {
+  private async getTemplateFilesInDirectory(
+    directoryPath: string,
+  ): Promise<string[]> {
     try {
       const files = await this.fileSystemManager.listFiles(directoryPath);
-      return files.filter((file: string) => ValidationUtils.isTemplateFile(file));
-    } catch (error) {
+      return files.filter((file: string) => isTemplateFile(file));
+    } catch (_error) {
       return [];
     }
   }
@@ -255,7 +303,7 @@ export class TemplateManager implements ITemplateManager {
   private async readTemplateFile(templatePath: string): Promise<string> {
     try {
       return await this.fileSystemManager.readFile(templatePath);
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to read template file: ${templatePath}`);
     }
   }
@@ -290,7 +338,7 @@ export class TemplateManager implements ITemplateManager {
       }
 
       return workspaceFolders[0].uri.fsPath;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -299,29 +347,33 @@ export class TemplateManager implements ITemplateManager {
     return path.resolve(filePath).replace(/\\/g, '/');
   }
 
-  private extractTemplateFolderName(templateRootPath: string): string | undefined {
+  private extractTemplateFolderName(
+    templateRootPath: string,
+  ): string | undefined {
     try {
       if (!templateRootPath || typeof templateRootPath !== 'string') {
         return undefined;
       }
-      
+
       // Handle both Unix and Windows path separators
       const normalizedPath = templateRootPath.replace(/\\/g, '/');
-      const pathParts = normalizedPath.split('/').filter(part => part.length > 0);
-      
+      const pathParts = normalizedPath
+        .split('/')
+        .filter(part => part.length > 0);
+
       if (pathParts.length === 0) {
         return undefined;
       }
-      
+
       const folderName = pathParts[pathParts.length - 1];
-      
+
       // Return undefined if we can't determine a valid folder name
       if (!folderName || folderName === '.' || folderName === '..') {
         return undefined;
       }
-      
+
       return folderName;
-    } catch (error) {
+    } catch (_error) {
       // If there's any error extracting the folder name, return undefined
       return undefined;
     }
@@ -331,19 +383,32 @@ export class TemplateManager implements ITemplateManager {
     return Date.now() - timestamp < this.CACHE_TTL;
   }
 
-  private async processFiles(files: any[], componentName: string, basePath: string = '', templateFolderName?: string): Promise<ProcessedFile[]> {
+  private async processFiles(
+    files: TemplateFileInfo[],
+    componentName: string,
+    basePath = '',
+    templateFolderName?: string,
+  ): Promise<ProcessedFile[]> {
     const processedFiles: ProcessedFile[] = [];
 
     for (const file of files) {
-      if (ValidationUtils.isTemplateFile(file.name)) {
+      if (isTemplateFile(file.name)) {
         const content = await this.fileSystemManager.readFile(file.path);
-        const processedContent = this.processTemplateContent(content, componentName);
-        const targetPath = this.generateTargetPath(file.relativePath, componentName, basePath, templateFolderName);
+        const processedContent = this.processTemplateContent(
+          content,
+          componentName,
+        );
+        const targetPath = this.generateTargetPath(
+          file.relativePath,
+          componentName,
+          basePath,
+          templateFolderName,
+        );
 
         processedFiles.push({
           originalPath: file.path,
           targetPath,
-          content: processedContent
+          content: processedContent,
         });
       }
     }
@@ -351,30 +416,55 @@ export class TemplateManager implements ITemplateManager {
     return processedFiles;
   }
 
-  private async processDirectories(directories: any[], componentName: string, basePath: string = '', templateFolderName?: string): Promise<ProcessedDirectory[]> {
+  private async processDirectories(
+    directories: TemplateDirectoryInfo[],
+    componentName: string,
+    basePath = '',
+    templateFolderName?: string,
+  ): Promise<ProcessedDirectory[]> {
     const processedDirectories: ProcessedDirectory[] = [];
 
     for (const directory of directories) {
       // Build the accumulated path for this directory
-      const currentDirectoryPath = basePath ? path.join(basePath, directory.relativePath) : directory.relativePath;
-      
+      const currentDirectoryPath = basePath
+        ? path.join(basePath, directory.relativePath)
+        : directory.relativePath;
+
       // Process files and subdirectories with the accumulated path
-      const processedFiles = await this.processFiles(directory.files, componentName, currentDirectoryPath, templateFolderName);
-      const processedSubdirectories = await this.processDirectories(directory.subdirectories, componentName, currentDirectoryPath, templateFolderName);
-      const targetPath = this.generateTargetPath(directory.relativePath, componentName, basePath, templateFolderName);
+      const processedFiles = await this.processFiles(
+        directory.files,
+        componentName,
+        currentDirectoryPath,
+        templateFolderName,
+      );
+      const processedSubdirectories = await this.processDirectories(
+        directory.subdirectories,
+        componentName,
+        currentDirectoryPath,
+        templateFolderName,
+      );
+      const targetPath = this.generateTargetPath(
+        directory.relativePath,
+        componentName,
+        basePath,
+        templateFolderName,
+      );
 
       processedDirectories.push({
         originalPath: directory.path,
         targetPath,
         files: processedFiles,
-        subdirectories: processedSubdirectories
+        subdirectories: processedSubdirectories,
       });
     }
 
     return processedDirectories;
   }
 
-  private processTemplateContent(content: string, componentName: string): string {
+  private processTemplateContent(
+    content: string,
+    componentName: string,
+  ): string {
     try {
       const compiled = handlebars.compile(content);
       return compiled({ name: this.formatComponentName(componentName) });
@@ -383,10 +473,15 @@ export class TemplateManager implements ITemplateManager {
     }
   }
 
-  private generateTargetPath(relativePath: string, componentName: string, basePath: string = '', templateFolderName?: string): string {
+  private generateTargetPath(
+    relativePath: string,
+    componentName: string,
+    basePath = '',
+    templateFolderName?: string,
+  ): string {
     // Validate the input relativePath first to prevent path traversal attacks
     this.validateTargetPath(relativePath);
-    
+
     // Validate basePath if provided
     if (basePath) {
       this.validateTargetPath(basePath);
@@ -400,11 +495,17 @@ export class TemplateManager implements ITemplateManager {
     }
 
     // Apply component naming rules to the path
-    const processedPath = this.applyNamingRules(targetPath, componentName, templateFolderName);
+    const processedPath = this.applyNamingRules(
+      targetPath,
+      componentName,
+      templateFolderName,
+    );
 
     // Combine basePath with processedPath using path.join for cross-platform compatibility
     // path.join handles empty strings gracefully and ensures proper path separators
-    const finalPath = basePath ? path.join(basePath, processedPath) : processedPath;
+    const finalPath = basePath
+      ? path.join(basePath, processedPath)
+      : processedPath;
 
     // Validate the final path as well to ensure no issues after processing
     this.validateTargetPath(finalPath);
@@ -412,15 +513,22 @@ export class TemplateManager implements ITemplateManager {
     return finalPath;
   }
 
-  private applyNamingRules(filePath: string, componentName: string, templateFolderName?: string): string {
+  private applyNamingRules(
+    filePath: string,
+    componentName: string,
+    templateFolderName?: string,
+  ): string {
     const pathParts = filePath.split(path.sep);
     const fileName = pathParts[pathParts.length - 1];
     let newFileName = fileName;
 
     // First, check if the filename starts with the template folder name (case-insensitive)
-    if (templateFolderName && fileName.toLowerCase().startsWith(templateFolderName.toLowerCase())) {
+    if (
+      templateFolderName &&
+      fileName.toLowerCase().startsWith(templateFolderName.toLowerCase())
+    ) {
       // Replace the matched portion with the component name, preserving the case of the component name
-      const matchedPortion = fileName.substring(0, templateFolderName.length);
+      const _matchedPortion = fileName.substring(0, templateFolderName.length);
       const remainingPortion = fileName.substring(templateFolderName.length);
       newFileName = this.formatComponentName(componentName) + remainingPortion;
     }
@@ -444,39 +552,53 @@ export class TemplateManager implements ITemplateManager {
 
     // Prevent path traversal attacks - check for .. sequences
     if (targetPath.includes('..')) {
-      throw new Error(`Invalid target path - contains path traversal: ${targetPath}`);
+      throw new Error(
+        `Invalid target path - contains path traversal: ${targetPath}`,
+      );
     }
 
     // Prevent absolute paths
     if (path.isAbsolute(targetPath)) {
-      throw new Error(`Invalid target path - absolute paths not allowed: ${targetPath}`);
+      throw new Error(
+        `Invalid target path - absolute paths not allowed: ${targetPath}`,
+      );
     }
 
     // Check for Windows and Unix absolute path patterns explicitly
     if (targetPath.startsWith('/') || /^[a-zA-Z]:/.test(targetPath)) {
-      throw new Error(`Invalid target path - absolute path detected: ${targetPath}`);
+      throw new Error(
+        `Invalid target path - absolute path detected: ${targetPath}`,
+      );
     }
 
     // Normalize the path and check for any remaining path traversal attempts
     const normalizedPath = path.normalize(targetPath);
-    
+
     // After normalization, check again for path traversal and absolute paths
     if (normalizedPath.includes('..')) {
-      throw new Error(`Invalid target path - path traversal detected after normalization: ${normalizedPath}`);
+      throw new Error(
+        `Invalid target path - path traversal detected after normalization: ${normalizedPath}`,
+      );
     }
-    
+
     if (path.isAbsolute(normalizedPath)) {
-      throw new Error(`Invalid target path - absolute path detected after normalization: ${normalizedPath}`);
+      throw new Error(
+        `Invalid target path - absolute path detected after normalization: ${normalizedPath}`,
+      );
     }
 
     // Additional check for paths that start with path separators after normalization
     if (normalizedPath.startsWith('/') || normalizedPath.startsWith('\\')) {
-      throw new Error(`Invalid target path - starts with path separator after normalization: ${normalizedPath}`);
+      throw new Error(
+        `Invalid target path - starts with path separator after normalization: ${normalizedPath}`,
+      );
     }
 
     // Check for Windows drive letters after normalization
     if (/^[a-zA-Z]:/.test(normalizedPath)) {
-      throw new Error(`Invalid target path - Windows drive letter detected after normalization: ${normalizedPath}`);
+      throw new Error(
+        `Invalid target path - Windows drive letter detected after normalization: ${normalizedPath}`,
+      );
     }
   }
 
@@ -485,12 +607,16 @@ export class TemplateManager implements ITemplateManager {
    * @param processedTemplate The processed template to validate
    * @throws Error if validation fails
    */
-  private validateProcessedTemplate(processedTemplate: ProcessedTemplate): void {
+  private validateProcessedTemplate(
+    processedTemplate: ProcessedTemplate,
+  ): void {
     const allTargetPaths = this.collectAllTargetPaths(processedTemplate);
     const duplicates = this.findDuplicatePaths(allTargetPaths);
-    
+
     if (duplicates.length > 0) {
-      throw new Error(`Duplicate target paths detected: ${duplicates.join(', ')}`);
+      throw new Error(
+        `Duplicate target paths detected: ${duplicates.join(', ')}`,
+      );
     }
   }
 
@@ -499,17 +625,19 @@ export class TemplateManager implements ITemplateManager {
    * @param processedTemplate The processed template to collect paths from
    * @returns Array of all target paths
    */
-  private collectAllTargetPaths(processedTemplate: ProcessedTemplate): string[] {
+  private collectAllTargetPaths(
+    processedTemplate: ProcessedTemplate,
+  ): string[] {
     const allPaths: string[] = [];
-    
+
     // Collect paths from root-level files
     for (const file of processedTemplate.files) {
       allPaths.push(file.targetPath);
     }
-    
+
     // Recursively collect paths from directories
     this.collectPathsFromDirectories(processedTemplate.directories, allPaths);
-    
+
     return allPaths;
   }
 
@@ -518,13 +646,16 @@ export class TemplateManager implements ITemplateManager {
    * @param directories Array of processed directories to collect paths from
    * @param allPaths Array to accumulate all paths
    */
-  private collectPathsFromDirectories(directories: ProcessedDirectory[], allPaths: string[]): void {
+  private collectPathsFromDirectories(
+    directories: ProcessedDirectory[],
+    allPaths: string[],
+  ): void {
     for (const directory of directories) {
       // Collect paths from files in this directory
       for (const file of directory.files) {
         allPaths.push(file.targetPath);
       }
-      
+
       // Recursively collect paths from subdirectories
       if (directory.subdirectories.length > 0) {
         this.collectPathsFromDirectories(directory.subdirectories, allPaths);
@@ -540,20 +671,20 @@ export class TemplateManager implements ITemplateManager {
   private findDuplicatePaths(targetPaths: string[]): string[] {
     const pathCounts = new Map<string, number>();
     const duplicates: string[] = [];
-    
+
     // Count occurrences of each path
     for (const path of targetPaths) {
       const count = pathCounts.get(path) || 0;
       pathCounts.set(path, count + 1);
     }
-    
+
     // Find paths that appear more than once
     for (const [path, count] of pathCounts.entries()) {
       if (count > 1) {
         duplicates.push(path);
       }
     }
-    
+
     return duplicates;
   }
 }

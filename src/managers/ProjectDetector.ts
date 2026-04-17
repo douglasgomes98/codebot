@@ -1,8 +1,9 @@
-import * as path from 'path';
+import { type Dirent, readdirSync } from 'node:fs';
+import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { IProjectDetector, ProjectContext } from '../types';
+import { CONFIG_FILE_NAME, DEFAULT_TEMPLATE_FOLDER } from '../constants';
 import { CodebotError } from '../errors';
-import { DEFAULT_TEMPLATE_FOLDER, CONFIG_FILE_NAME } from '../constants';
+import type { IProjectDetector, ProjectContext } from '../types';
 
 export class ProjectDetector implements IProjectDetector {
   private workspaceRoot: string;
@@ -17,19 +18,19 @@ export class ProjectDetector implements IProjectDetector {
       // Check cache first
       const cacheKey = this.normalizePath(folderPath);
       if (this.projectCache.has(cacheKey)) {
-        return this.projectCache.get(cacheKey)!;
+        return this.projectCache.get(cacheKey) as ProjectContext;
       }
 
       const projectRoot = this.resolveProjectRoot(folderPath);
       const isMultiProject = this.isMultiProjectWorkspace();
-      
+
       const context: ProjectContext = {
         workspaceRoot: this.workspaceRoot,
         projectRoot,
         templatePath: this.resolveTemplatePath(projectRoot),
         configPath: this.resolveConfigPath(projectRoot),
         isMultiProject,
-        projectName: isMultiProject ? path.basename(projectRoot) : undefined
+        projectName: isMultiProject ? path.basename(projectRoot) : undefined,
       };
 
       // Cache the result
@@ -56,7 +57,7 @@ export class ProjectDetector implements IProjectDetector {
 
   resolveProjectRoot(folderPath: string): string {
     const normalizedPath = this.normalizePath(folderPath);
-    
+
     // If it's a multi-project workspace, find the nearest project root
     if (this.isMultiProjectWorkspace()) {
       return this.findNearestProjectRoot(normalizedPath);
@@ -88,17 +89,20 @@ export class ProjectDetector implements IProjectDetector {
 
   private detectSubProjects(): boolean {
     try {
-      const fs = require('fs');
-      const workspaceContents = fs.readdirSync(this.workspaceRoot, { withFileTypes: true });
-      
+      const workspaceContents = readdirSync(this.workspaceRoot, {
+        withFileTypes: true,
+      });
+
       // Look for multiple directories that could be projects
       const potentialProjects = workspaceContents
-        .filter((dirent: any) => dirent.isDirectory())
-        .filter((dirent: any) => !dirent.name.startsWith('.'))
-        .filter((dirent: any) => this.looksLikeProject(path.join(this.workspaceRoot, dirent.name)));
+        .filter((dirent: Dirent) => dirent.isDirectory())
+        .filter((dirent: Dirent) => !dirent.name.startsWith('.'))
+        .filter((dirent: Dirent) =>
+          this.looksLikeProject(path.join(this.workspaceRoot, dirent.name)),
+        );
 
       return potentialProjects.length > 1;
-    } catch (error) {
+    } catch (_error) {
       // If we can't read the workspace, assume single project
       return false;
     }
@@ -106,9 +110,8 @@ export class ProjectDetector implements IProjectDetector {
 
   private looksLikeProject(dirPath: string): boolean {
     try {
-      const fs = require('fs');
-      const contents = fs.readdirSync(dirPath);
-      
+      const contents = readdirSync(dirPath);
+
       // Check for common project indicators
       const projectIndicators = [
         'package.json',
@@ -116,20 +119,23 @@ export class ProjectDetector implements IProjectDetector {
         'src',
         'lib',
         'templates',
-        CONFIG_FILE_NAME
+        CONFIG_FILE_NAME,
       ];
 
       return projectIndicators.some(indicator => contents.includes(indicator));
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
 
   private findNearestProjectRoot(folderPath: string): string {
     let currentPath = folderPath;
-    
+
     // Walk up the directory tree until we find a project root or reach workspace root
-    while (currentPath !== this.workspaceRoot && currentPath !== path.dirname(currentPath)) {
+    while (
+      currentPath !== this.workspaceRoot &&
+      currentPath !== path.dirname(currentPath)
+    ) {
       if (this.looksLikeProject(currentPath)) {
         return currentPath;
       }

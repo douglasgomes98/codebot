@@ -1,8 +1,8 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { FileSystemManager } from '../../managers/FileSystemManager';
-import { FileSystemEntry, ErrorType } from '../../types';
+import { ErrorType } from '../../types';
 
 describe('FileSystemManager', () => {
   let fileSystemManager: FileSystemManager;
@@ -56,7 +56,9 @@ describe('FileSystemManager', () => {
       const folderPath = path.join(tempDir, 'existingFolder');
       fs.mkdirSync(folderPath);
 
-      await expect(fileSystemManager.createFolder(folderPath)).resolves.not.toThrow();
+      await expect(
+        fileSystemManager.createFolder(folderPath),
+      ).resolves.not.toThrow();
     });
   });
 
@@ -74,7 +76,9 @@ describe('FileSystemManager', () => {
       const folderPath = path.join(tempDir, 'existing', 'nested');
       fs.mkdirSync(folderPath, { recursive: true });
 
-      await expect(fileSystemManager.createFolderRecursive(folderPath)).resolves.not.toThrow();
+      await expect(
+        fileSystemManager.createFolderRecursive(folderPath),
+      ).resolves.not.toThrow();
     });
   });
 
@@ -149,7 +153,7 @@ describe('FileSystemManager', () => {
       const filePath = path.join(tempDir, 'nonexistent.txt');
 
       await expect(fileSystemManager.readFile(filePath)).rejects.toMatchObject({
-        type: ErrorType.FILE_SYSTEM_ERROR
+        type: ErrorType.FILE_SYSTEM_ERROR,
       });
     });
   });
@@ -159,7 +163,7 @@ describe('FileSystemManager', () => {
       const file1 = path.join(tempDir, 'file1.txt');
       const file2 = path.join(tempDir, 'file2.js');
       const subDir = path.join(tempDir, 'subdir');
-      
+
       fs.writeFileSync(file1, 'content1');
       fs.writeFileSync(file2, 'content2');
       fs.mkdirSync(subDir);
@@ -187,7 +191,7 @@ describe('FileSystemManager', () => {
       const file2 = path.join(tempDir, 'file2.js');
       const subDir1 = path.join(tempDir, 'subdir1');
       const subDir2 = path.join(tempDir, 'subdir2');
-      
+
       fs.writeFileSync(file1, 'content1');
       fs.writeFileSync(file2, 'content2');
       fs.mkdirSync(subDir1);
@@ -205,7 +209,8 @@ describe('FileSystemManager', () => {
     it('should return empty array for non-existing directory', async () => {
       const nonExistentDir = path.join(tempDir, 'nonexistent');
 
-      const directories = await fileSystemManager.listDirectories(nonExistentDir);
+      const directories =
+        await fileSystemManager.listDirectories(nonExistentDir);
 
       expect(directories).toEqual([]);
     });
@@ -220,14 +225,14 @@ describe('FileSystemManager', () => {
         'subdir1/file3.ts': 'content3',
         'subdir1/file4.css': 'content4',
         'subdir1/nested/file5.html': 'content5',
-        'subdir2/file6.json': 'content6'
+        'subdir2/file6.json': 'content6',
       };
 
-      Object.entries(structure).forEach(([filePath, content]) => {
+      for (const [filePath, content] of Object.entries(structure)) {
         const fullPath = path.join(tempDir, filePath);
         fs.mkdirSync(path.dirname(fullPath), { recursive: true });
         fs.writeFileSync(fullPath, content);
-      });
+      }
     });
 
     it('should list all files and directories recursively', async () => {
@@ -235,7 +240,7 @@ describe('FileSystemManager', () => {
 
       // Should have root files and directories
       expect(entries.length).toBeGreaterThan(0);
-      
+
       // Check for root files
       const rootFiles = entries.filter(e => !e.isDirectory);
       expect(rootFiles.some(f => f.name === 'file1.txt')).toBe(true);
@@ -250,12 +255,14 @@ describe('FileSystemManager', () => {
       const subdir1 = directories.find(d => d.name === 'subdir1');
       expect(subdir1?.children).toBeDefined();
       expect(subdir1?.children?.some(c => c.name === 'file3.ts')).toBe(true);
-      expect(subdir1?.children?.some(c => c.name === 'nested' && c.isDirectory)).toBe(true);
+      expect(
+        subdir1?.children?.some(c => c.name === 'nested' && c.isDirectory),
+      ).toBe(true);
     });
 
     it('should set correct relative paths', async () => {
       const entries = await fileSystemManager.listFilesRecursive(tempDir);
-      
+
       const subdir1 = entries.find(e => e.name === 'subdir1' && e.isDirectory);
       expect(subdir1?.relativePath).toBe('subdir1');
 
@@ -266,7 +273,8 @@ describe('FileSystemManager', () => {
     it('should return empty array for non-existing directory', async () => {
       const nonExistentDir = path.join(tempDir, 'nonexistent');
 
-      const entries = await fileSystemManager.listFilesRecursive(nonExistentDir);
+      const entries =
+        await fileSystemManager.listFilesRecursive(nonExistentDir);
 
       expect(entries).toEqual([]);
     });
@@ -279,9 +287,11 @@ describe('FileSystemManager', () => {
         fs.mkdirSync(deepPath, { recursive: true });
       }
 
-      await expect(fileSystemManager.listFilesRecursive(tempDir)).rejects.toMatchObject({
+      await expect(
+        fileSystemManager.listFilesRecursive(tempDir),
+      ).rejects.toMatchObject({
         type: ErrorType.FILE_SYSTEM_ERROR,
-        message: expect.stringContaining('Maximum directory depth exceeded')
+        message: expect.stringContaining('Maximum directory depth exceeded'),
       });
     });
   });
@@ -300,15 +310,15 @@ describe('FileSystemManager', () => {
         'file2.js': 'content2',
         'subdir1/file3.ts': 'content3',
         'subdir1/nested/file4.html': 'content4',
-        'subdir2/file5.json': 'content5'
+        'subdir2/file5.json': 'content5',
       };
 
       fs.mkdirSync(sourceDir);
-      Object.entries(structure).forEach(([filePath, content]) => {
+      for (const [filePath, content] of Object.entries(structure)) {
         const fullPath = path.join(sourceDir, filePath);
         fs.mkdirSync(path.dirname(fullPath), { recursive: true });
         fs.writeFileSync(fullPath, content);
-      });
+      }
     });
 
     it('should copy entire directory structure', async () => {
@@ -320,13 +330,26 @@ describe('FileSystemManager', () => {
       // Verify files are copied
       expect(fs.existsSync(path.join(targetDir, 'file1.txt'))).toBe(true);
       expect(fs.existsSync(path.join(targetDir, 'file2.js'))).toBe(true);
-      expect(fs.existsSync(path.join(targetDir, 'subdir1', 'file3.ts'))).toBe(true);
-      expect(fs.existsSync(path.join(targetDir, 'subdir1', 'nested', 'file4.html'))).toBe(true);
-      expect(fs.existsSync(path.join(targetDir, 'subdir2', 'file5.json'))).toBe(true);
+      expect(fs.existsSync(path.join(targetDir, 'subdir1', 'file3.ts'))).toBe(
+        true,
+      );
+      expect(
+        fs.existsSync(path.join(targetDir, 'subdir1', 'nested', 'file4.html')),
+      ).toBe(true);
+      expect(fs.existsSync(path.join(targetDir, 'subdir2', 'file5.json'))).toBe(
+        true,
+      );
 
       // Verify content is copied correctly
-      expect(fs.readFileSync(path.join(targetDir, 'file1.txt'), 'utf8')).toBe('content1');
-      expect(fs.readFileSync(path.join(targetDir, 'subdir1', 'nested', 'file4.html'), 'utf8')).toBe('content4');
+      expect(fs.readFileSync(path.join(targetDir, 'file1.txt'), 'utf8')).toBe(
+        'content1',
+      );
+      expect(
+        fs.readFileSync(
+          path.join(targetDir, 'subdir1', 'nested', 'file4.html'),
+          'utf8',
+        ),
+      ).toBe('content4');
     });
 
     it('should create target directory if it does not exist', async () => {
@@ -341,11 +364,12 @@ describe('FileSystemManager', () => {
     it('should throw error if source directory does not exist', async () => {
       const nonExistentSource = path.join(tempDir, 'nonexistent');
 
-      await expect(fileSystemManager.copyDirectoryStructure(nonExistentSource, targetDir))
-        .rejects.toMatchObject({
-          type: ErrorType.FILE_SYSTEM_ERROR,
-          message: expect.stringContaining('Source directory does not exist')
-        });
+      await expect(
+        fileSystemManager.copyDirectoryStructure(nonExistentSource, targetDir),
+      ).rejects.toMatchObject({
+        type: ErrorType.FILE_SYSTEM_ERROR,
+        message: expect.stringContaining('Source directory does not exist'),
+      });
     });
   });
 });

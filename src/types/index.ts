@@ -48,7 +48,7 @@ export interface GenerationContext {
   componentName: string;
   targetPath: string;
   templateType: string;
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
   options: GenerationOptions;
 }
 
@@ -114,13 +114,13 @@ export enum ErrorType {
   FILE_SYSTEM_ERROR = 'FILE_SYSTEM_ERROR',
   TEMPLATE_PROCESSING_ERROR = 'TEMPLATE_PROCESSING_ERROR',
   PROJECT_DETECTION_ERROR = 'PROJECT_DETECTION_ERROR',
-  CONFIGURATION_ERROR = 'CONFIGURATION_ERROR'
+  CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
 }
 
 export interface CodebotError {
   type: ErrorType;
   message: string;
-  details?: any;
+  details?: unknown;
   recoverable: boolean;
 }
 
@@ -128,8 +128,8 @@ export interface CommandArgs {
   fsPath?: string;
 }
 
+export * from '../constants';
+export * from '../errors';
 // Re-export interfaces and utilities for convenience
 export * from '../interfaces';
-export * from '../errors';
-export * from '../constants';
 export * from '../utils';

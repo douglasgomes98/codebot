@@ -1,7 +1,11 @@
-import * as path from 'path';
-import { IConfigurationManager, ConfigurationFile } from '../types';
+import * as path from 'node:path';
+import {
+  CONFIG_FILE_NAME,
+  DEFAULT_CONFIGURATION,
+  DEFAULT_TEMPLATE_FOLDER,
+} from '../constants';
 import { CodebotError } from '../errors';
-import { DEFAULT_CONFIGURATION, CONFIG_FILE_NAME, DEFAULT_TEMPLATE_FOLDER } from '../constants';
+import type { ConfigurationFile, IConfigurationManager } from '../types';
 
 export class ConfigurationManager implements IConfigurationManager {
   private configCache = new Map<string, ConfigurationFile>();
@@ -11,12 +15,12 @@ export class ConfigurationManager implements IConfigurationManager {
       // Check cache first
       const cacheKey = this.normalizePath(projectPath);
       if (this.configCache.has(cacheKey)) {
-        return this.configCache.get(cacheKey)!;
+        return this.configCache.get(cacheKey) as ConfigurationFile;
       }
 
       // Try hierarchical configuration resolution
       const config = await this.resolveHierarchicalConfiguration(projectPath);
-      
+
       // Cache the result
       this.configCache.set(cacheKey, config);
       return config;
@@ -28,8 +32,9 @@ export class ConfigurationManager implements IConfigurationManager {
   resolveTemplatePath(projectPath: string): string {
     const configPath = this.getConfigurationPath(projectPath);
     const config = this.loadConfigurationSync(configPath);
-    
-    const templateFolder = config?.templateFolderPath || DEFAULT_TEMPLATE_FOLDER;
+
+    const templateFolder =
+      config?.templateFolderPath || DEFAULT_TEMPLATE_FOLDER;
     return path.resolve(projectPath, templateFolder);
   }
 
@@ -37,7 +42,9 @@ export class ConfigurationManager implements IConfigurationManager {
     return path.join(projectPath, CONFIG_FILE_NAME);
   }
 
-  private async resolveHierarchicalConfiguration(projectPath: string): Promise<ConfigurationFile> {
+  private async resolveHierarchicalConfiguration(
+    projectPath: string,
+  ): Promise<ConfigurationFile> {
     const configurations: Partial<ConfigurationFile>[] = [];
 
     // 1. Try project-specific configuration
@@ -62,14 +69,16 @@ export class ConfigurationManager implements IConfigurationManager {
     return this.mergeConfigurations(configurations);
   }
 
-  private async loadConfiguration(configPath: string): Promise<ConfigurationFile | null> {
+  private async loadConfiguration(
+    configPath: string,
+  ): Promise<ConfigurationFile | null> {
     try {
-      const fs = require('fs').promises;
+      const fs = require('node:fs').promises;
       const fullPath = path.join(configPath, CONFIG_FILE_NAME);
-      
+
       const configContent = await fs.readFile(fullPath, 'utf8');
       return JSON.parse(configContent) as ConfigurationFile;
-    } catch (error) {
+    } catch (_error) {
       // Configuration file doesn't exist or is invalid
       return null;
     }
@@ -77,23 +86,25 @@ export class ConfigurationManager implements IConfigurationManager {
 
   private loadConfigurationSync(configPath: string): ConfigurationFile | null {
     try {
-      const fs = require('fs');
+      const fs = require('node:fs');
       const fullPath = path.join(configPath, CONFIG_FILE_NAME);
-      
+
       const configContent = fs.readFileSync(fullPath, 'utf8');
       return JSON.parse(configContent) as ConfigurationFile;
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
 
-  private mergeConfigurations(configurations: Partial<ConfigurationFile>[]): ConfigurationFile {
+  private mergeConfigurations(
+    configurations: Partial<ConfigurationFile>[],
+  ): ConfigurationFile {
     const merged: ConfigurationFile = {
       templateFolderPath: DEFAULT_TEMPLATE_FOLDER,
       multiProject: {
         enabled: true,
-        projectDetection: 'auto'
-      }
+        projectDetection: 'auto',
+      },
     };
 
     // Merge from least specific to most specific (reverse order)
@@ -101,11 +112,11 @@ export class ConfigurationManager implements IConfigurationManager {
       if (config.templateFolderPath !== undefined) {
         merged.templateFolderPath = config.templateFolderPath;
       }
-      
+
       if (config.multiProject) {
         merged.multiProject = {
           ...merged.multiProject,
-          ...config.multiProject
+          ...config.multiProject,
         };
       }
     }
@@ -118,7 +129,7 @@ export class ConfigurationManager implements IConfigurationManager {
     // In a real scenario, you'd use VS Code's workspace API
     const vscode = require('vscode');
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    
+
     if (!workspaceFolders || workspaceFolders.length === 0) {
       return null;
     }
@@ -153,7 +164,10 @@ export class ConfigurationManager implements IConfigurationManager {
   validateConfiguration(config: ConfigurationFile): boolean {
     try {
       // Basic validation
-      if (config.templateFolderPath && typeof config.templateFolderPath !== 'string') {
+      if (
+        config.templateFolderPath &&
+        typeof config.templateFolderPath !== 'string'
+      ) {
         return false;
       }
 
@@ -161,14 +175,16 @@ export class ConfigurationManager implements IConfigurationManager {
         if (typeof config.multiProject.enabled !== 'boolean') {
           return false;
         }
-        
-        if (!['auto', 'manual'].includes(config.multiProject.projectDetection)) {
+
+        if (
+          !['auto', 'manual'].includes(config.multiProject.projectDetection)
+        ) {
           return false;
         }
       }
 
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -176,19 +192,23 @@ export class ConfigurationManager implements IConfigurationManager {
   // Method to create default configuration file
   async createDefaultConfiguration(projectPath: string): Promise<void> {
     try {
-      const fs = require('fs').promises;
+      const fs = require('node:fs').promises;
       const configPath = this.getConfigurationPath(projectPath);
-      
+
       const defaultConfig = {
         templateFolderPath: DEFAULT_TEMPLATE_FOLDER,
         multiProject: {
           enabled: true,
-          projectDetection: 'auto'
-        }
+          projectDetection: 'auto',
+        },
       };
 
-      await fs.writeFile(configPath, JSON.stringify(defaultConfig, null, 2), 'utf8');
-      
+      await fs.writeFile(
+        configPath,
+        JSON.stringify(defaultConfig, null, 2),
+        'utf8',
+      );
+
       // Invalidate cache for this path
       this.invalidateConfiguration(projectPath);
     } catch (error) {

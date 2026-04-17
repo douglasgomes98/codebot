@@ -6,8 +6,8 @@ export const DEFAULT_CONFIGURATION = {
   templateFolderPath: DEFAULT_TEMPLATE_FOLDER,
   multiProject: {
     enabled: true,
-    projectDetection: 'auto' as const
-  }
+    projectDetection: 'auto' as const,
+  },
 };
 
 export const SUPPORTED_TEMPLATE_EXTENSIONS = ['.hbs'];
@@ -18,5 +18,5 @@ export const ERROR_MESSAGES = {
   INVALID_COMPONENT_NAME: 'Invalid component name!',
   TEMPLATE_FOLDER_EMPTY: 'Templates folder is empty!',
   TEMPLATE_NOT_FOUND: 'Template folder not found!',
-  INVALID_TEMPLATE_TYPE: 'Invalid template type!'
+  INVALID_TEMPLATE_TYPE: 'Invalid template type!',
 } as const;
