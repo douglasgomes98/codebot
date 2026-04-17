@@ -4,19 +4,21 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  check-code:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
 
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
+      - uses: actions/checkout@v4
 
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v4
         with:
-          node-version: "16.x"
+          node-version: "24.x"
           cache: "npm"
 
       - name: Install Dependencies
@@ -25,8 +27,38 @@ jobs:
       - name: Checking code style
         run: npm run lint:check
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
       - name: Running tests
         run: npm test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
 
       - name: Building
         run: npm run build
