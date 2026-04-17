@@ -61,7 +61,8 @@
     "dev-install": "npm run compile && npx vsce package && code --install-extension codebot-1.0.0.vsix --force"
   },
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.74.0",
+    "node": ">=24.12.0"
   },
   "dependencies": {
     "fs": "^0.0.2",
