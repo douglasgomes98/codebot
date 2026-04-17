@@ -17,16 +17,16 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: "16.x"
-          cache: "yarn"
+          cache: "npm"
 
       - name: Install Dependencies
-        run: yarn install
+        run: npm ci
 
       - name: Checking code style
-        run: yarn lint:check
+        run: npm run lint:check
 
       - name: Running tests
-        run: yarn test
+        run: npm test
 
       - name: Building
-        run: yarn build
+        run: npm run build
