@@ -15,10 +15,6 @@
     "Snippets",
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:codebot.createComponent",
-    "onCommand:codebot.updateComponent"
-  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [

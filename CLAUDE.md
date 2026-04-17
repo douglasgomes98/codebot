@@ -9,8 +9,8 @@ npm run compile       # Webpack build (development)
 npm run watch         # Webpack watch mode
 npm run package       # Production build with hidden source maps
 npm run build         # Package extension as .vsix
-npm run lint          # ESLint + Prettier with auto-fix
-npm run lint:check    # Lint check without fixing (used in CI)
+npm run lint          # Biome check with auto-fix
+npm run lint:check    # Biome check without fixing (used in CI)
 npm test              # Run Jest tests
 npm run test:watch    # Jest watch mode
 npm run test:coverage # Generate coverage reports
@@ -63,6 +63,13 @@ Filenames containing the template folder name (or the literal string "Template")
 ## Build & packaging
 
 Webpack bundles everything into a single `dist/extension.js`. The `vscode` module is marked as external (provided by the host). TypeScript targets ES6 with strict mode enabled.
+
+## Linting & formatting
+
+[Biome](https://biomejs.dev/) replaces ESLint and Prettier. Config lives in `biome.json` at the project root. Rules follow Biome's recommended set; formatting matches the previous Prettier config (single quotes, 2-space indent, trailing commas, LF line endings).
+
+- `npm run lint:check` — check only, exits non-zero on warnings (used in CI)
+- `npm run lint` — check and auto-fix
 
 ## Testing
 
