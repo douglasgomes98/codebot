@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/douglasgomes98/codebot/compare/v1.0.0...v1.1.0) (2026-04-18)
+
+
+### Features
+
+* workspaces ([#244](https://github.com/douglasgomes98/codebot/issues/244)) ([2594c89](https://github.com/douglasgomes98/codebot/commit/2594c896634c9d0d9f7df9ff08f511e2d6e2a690))
+
 # 1.0.0 (2023-01-02)
 
 
