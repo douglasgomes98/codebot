@@ -6,13 +6,17 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
-  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/test/**/*'],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/__tests__/**/*',
+    '!src/__mocks__/**/*',
+  ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapper: {
-    '^vscode$': '<rootDir>/src/test/__mocks__/vscode.js',
+    '^vscode$': '<rootDir>/src/__mocks__/vscode.js',
   },
-  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
   maxWorkers: 1,
   forceExit: true,
   detectOpenHandles: true,
