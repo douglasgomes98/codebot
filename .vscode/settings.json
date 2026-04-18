@@ -32,5 +32,8 @@
 
   "cSpell.words": ["codebot", "douglasgomes", "styfle", "vsix"],
 
-  "codebot.templatesFolderPath": "examples"
+  "codebot.templatesFolderPath": "examples",
+  "codebot.templateSettings": {
+    "ReactPackage": { "nameFormat": "kebab-case" }
+  }
 }

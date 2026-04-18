@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { readConfig } from '../helpers/config/readConfig';
+import { getNameFormat, readConfig } from '../helpers/config/readConfig';
 import { listTemplates } from '../helpers/template/listTemplates';
 import { processTemplateFolder } from '../helpers/template/processTemplateFolder';
 import { getWorkspaceFolders } from '../helpers/vscode/getWorkspaceFolders';
@@ -10,7 +10,8 @@ import { showInfo } from '../helpers/vscode/showInfo';
 import { createWorkspaceFolder } from '../helpers/vscode/workspace/createFolder';
 import { workspaceFileExists } from '../helpers/vscode/workspace/fileExists';
 import { writeWorkspaceFile } from '../helpers/vscode/workspace/writeFile';
-import { formatToPascalCase, isValidComponentName } from '../utils/validation';
+import { formatName } from '../utils/formatName';
+import { canBeFormatted } from '../utils/validation';
 
 const findWorkspaceFolderUri = (
   clickedUri: vscode.Uri,
@@ -30,8 +31,7 @@ export const updateComponent = async (
   }
 
   const rawName = path.basename(clickedUri.fsPath);
-  const componentName = formatToPascalCase(rawName);
-  if (!isValidComponentName(componentName)) {
+  if (!canBeFormatted(rawName)) {
     showError(
       `'${rawName}' cannot be converted to a valid component name. Right-click directly on the component folder.`,
     );
@@ -75,6 +75,10 @@ export const updateComponent = async (
   }
   if (!templateName) return;
 
+  const componentName = formatName(
+    rawName,
+    getNameFormat(config, templateName),
+  );
   const templateFolderUri = vscode.Uri.joinPath(templatesUri, templateName);
 
   const processedResult = await processTemplateFolder(

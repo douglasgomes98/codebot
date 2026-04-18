@@ -12,9 +12,16 @@ const encode = (s: string) => new TextEncoder().encode(s);
 
 const clickedUri = vscode.Uri.file('/test/workspace/src/components');
 
-const setupConfig = (templatesFolderPath = 'templates') => {
+const setupConfig = (
+  templatesFolderPath = 'templates',
+  templateSettings: Record<string, { nameFormat?: string }> = {},
+) => {
   mockGetConfiguration.mockReturnValue({
-    get: jest.fn().mockReturnValue(templatesFolderPath),
+    get: jest.fn().mockImplementation((key: string) => {
+      if (key === 'templatesFolderPath') return templatesFolderPath;
+      if (key === 'templateSettings') return templateSettings;
+      return undefined;
+    }),
     update: jest.fn(),
     has: jest.fn(),
     inspect: jest.fn(),
@@ -382,7 +389,7 @@ describe('createComponent', () => {
     });
   });
 
-  describe('PascalCase formatting', () => {
+  describe('name formatting (default: pascal-case)', () => {
     const setupTemplate = () => {
       mockFs.readDirectory
         .mockResolvedValueOnce([['ComponentSass', 2]] as never)
@@ -424,6 +431,84 @@ describe('createComponent', () => {
       expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
         expect.stringContaining("'MyComponent' created"),
       );
+    });
+  });
+
+  describe('nameFormat per template', () => {
+    const setupTemplateWithFormat = (
+      templateName: string,
+      nameFormat: string,
+    ) => {
+      setupConfig('templates', { [templateName]: { nameFormat } });
+      mockFs.readDirectory
+        .mockResolvedValueOnce([[templateName, 2]] as never)
+        .mockResolvedValueOnce([['index.hbs', 1]] as never);
+      mockFs.readFile.mockResolvedValue(encode('// {{name}}') as never);
+      mockFs.stat.mockRejectedValue(new Error('not found'));
+      mockFs.createDirectory.mockResolvedValue(undefined);
+      mockFs.writeFile.mockResolvedValue(undefined);
+    };
+
+    it('applies kebab-case format when configured for the selected template', async () => {
+      setupTemplateWithFormat('ReactPackage', 'kebab-case');
+      mockWindow.showInputBox.mockResolvedValue('my-package');
+
+      await createComponent(clickedUri);
+
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'my-package' created"),
+      );
+    });
+
+    it('applies camel-case format when configured', async () => {
+      setupTemplateWithFormat('MyTemplate', 'camel-case');
+      mockWindow.showInputBox.mockResolvedValue('my-component');
+
+      await createComponent(clickedUri);
+
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'myComponent' created"),
+      );
+    });
+
+    it('applies snake-case format when configured', async () => {
+      setupTemplateWithFormat('MyTemplate', 'snake-case');
+      mockWindow.showInputBox.mockResolvedValue('MyComponent');
+
+      await createComponent(clickedUri);
+
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'my_component' created"),
+      );
+    });
+
+    it('falls back to pascal-case when template has no nameFormat setting', async () => {
+      setupConfig('templates', {});
+      mockFs.readDirectory
+        .mockResolvedValueOnce([['ComponentSass', 2]] as never)
+        .mockResolvedValueOnce([['ComponentSass.tsx.hbs', 1]] as never);
+      mockFs.readFile.mockResolvedValue(encode('// {{name}}') as never);
+      mockFs.stat.mockRejectedValue(new Error('not found'));
+      mockFs.createDirectory.mockResolvedValue(undefined);
+      mockFs.writeFile.mockResolvedValue(undefined);
+      mockWindow.showInputBox.mockResolvedValue('my-button');
+
+      await createComponent(clickedUri);
+
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'MyButton' created"),
+      );
+    });
+
+    it('uses formatted name in compiled template content', async () => {
+      setupTemplateWithFormat('ReactPackage', 'kebab-case');
+      mockWindow.showInputBox.mockResolvedValue('my-package');
+
+      await createComponent(clickedUri);
+
+      const [, content] = mockFs.writeFile.mock.calls[0] ?? [];
+      const text = new TextDecoder().decode(content as Uint8Array);
+      expect(text).toBe('// my-package');
     });
   });
 });

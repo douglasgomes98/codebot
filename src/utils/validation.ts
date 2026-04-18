@@ -1,6 +1,7 @@
+import { canBeFormatted } from './formatName';
 import { formatToPascalCase } from './formatToPascalCase';
 
-export { formatToPascalCase };
+export { canBeFormatted, formatToPascalCase };
 
 const COMPONENT_NAME_RE = /^[A-Z][A-Za-z0-9]*$/;
 

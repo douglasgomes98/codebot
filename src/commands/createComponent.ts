@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { readConfig } from '../helpers/config/readConfig';
+import { getNameFormat, readConfig } from '../helpers/config/readConfig';
 import { listTemplates } from '../helpers/template/listTemplates';
 import { processTemplateFolder } from '../helpers/template/processTemplateFolder';
 import { getWorkspaceFolders } from '../helpers/vscode/getWorkspaceFolders';
@@ -11,11 +11,8 @@ import { showInfo } from '../helpers/vscode/showInfo';
 import { createWorkspaceFolder } from '../helpers/vscode/workspace/createFolder';
 import { workspaceFileExists } from '../helpers/vscode/workspace/fileExists';
 import { writeWorkspaceFile } from '../helpers/vscode/workspace/writeFile';
-import {
-  COMPONENT_NAME_ERROR,
-  formatToPascalCase,
-  isValidComponentName,
-} from '../utils/validation';
+import { formatName } from '../utils/formatName';
+import { COMPONENT_NAME_ERROR, canBeFormatted } from '../utils/validation';
 
 const findWorkspaceFolderUri = (
   clickedUri: vscode.Uri,
@@ -64,10 +61,7 @@ export const createComponent = async (
   const rawName = await promptInput({
     prompt: 'Component name',
     placeholder: 'e.g. Button',
-    validateInput: v =>
-      isValidComponentName(formatToPascalCase(v))
-        ? undefined
-        : COMPONENT_NAME_ERROR,
+    validateInput: v => (canBeFormatted(v) ? undefined : COMPONENT_NAME_ERROR),
   });
   if (!rawName) return;
 
@@ -81,7 +75,10 @@ export const createComponent = async (
   }
   if (!templateName) return;
 
-  const componentName = formatToPascalCase(rawName.trim());
+  const componentName = formatName(
+    rawName.trim(),
+    getNameFormat(config, templateName),
+  );
   const templateFolderUri = vscode.Uri.joinPath(templatesUri, templateName);
 
   const processedResult = await processTemplateFolder(

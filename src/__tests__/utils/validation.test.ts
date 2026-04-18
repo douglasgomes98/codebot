@@ -1,5 +1,6 @@
 import {
   COMPONENT_NAME_ERROR,
+  canBeFormatted,
   formatToPascalCase,
   isValidComponentName,
 } from '../../utils/validation';
@@ -84,5 +85,25 @@ describe('COMPONENT_NAME_ERROR', () => {
   it('is a non-empty string', () => {
     expect(typeof COMPONENT_NAME_ERROR).toBe('string');
     expect(COMPONENT_NAME_ERROR.length).toBeGreaterThan(0);
+  });
+});
+
+describe('canBeFormatted', () => {
+  it('is re-exported from validation', () => {
+    expect(typeof canBeFormatted).toBe('function');
+  });
+
+  it('returns true for valid starting characters', () => {
+    expect(canBeFormatted('button')).toBe(true);
+    expect(canBeFormatted('Button')).toBe(true);
+    expect(canBeFormatted('my-button')).toBe(true);
+  });
+
+  it('returns false for names starting with a digit', () => {
+    expect(canBeFormatted('1button')).toBe(false);
+  });
+
+  it('returns false for empty string', () => {
+    expect(canBeFormatted('')).toBe(false);
   });
 });

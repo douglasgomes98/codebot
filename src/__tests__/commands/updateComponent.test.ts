@@ -13,9 +13,16 @@ const encode = (s: string) => new TextEncoder().encode(s);
 // Clicking directly on the component folder (e.g. src/components/Button)
 const clickedUri = vscode.Uri.file('/test/workspace/src/components/Button');
 
-const setupConfig = (templatesFolderPath = 'templates') => {
+const setupConfig = (
+  templatesFolderPath = 'templates',
+  templateSettings: Record<string, { nameFormat?: string }> = {},
+) => {
   mockGetConfiguration.mockReturnValue({
-    get: jest.fn().mockReturnValue(templatesFolderPath),
+    get: jest.fn().mockImplementation((key: string) => {
+      if (key === 'templatesFolderPath') return templatesFolderPath;
+      if (key === 'templateSettings') return templateSettings;
+      return undefined;
+    }),
     update: jest.fn(),
     has: jest.fn(),
     inspect: jest.fn(),
@@ -216,7 +223,7 @@ describe('updateComponent', () => {
     });
   });
 
-  describe('PascalCase formatting', () => {
+  describe('name formatting (default: pascal-case)', () => {
     it('converts a kebab-case folder name to PascalCase', async () => {
       const kebabUri = vscode.Uri.file(
         '/test/workspace/src/components/my-button',
@@ -257,6 +264,81 @@ describe('updateComponent', () => {
       expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
         expect.stringContaining("'MyCard' updated"),
       );
+    });
+  });
+
+  describe('nameFormat per template', () => {
+    const setupTemplateWithFormat = (
+      templateName: string,
+      nameFormat: string,
+    ) => {
+      setupConfig('templates', { [templateName]: { nameFormat } });
+      mockFs.readDirectory
+        .mockResolvedValueOnce([[templateName, 2]] as never)
+        .mockResolvedValueOnce([['index.hbs', 1]] as never);
+      mockFs.readFile.mockResolvedValue(encode('// {{name}}') as never);
+      mockFs.stat.mockRejectedValue(new Error('not found'));
+      mockFs.createDirectory.mockResolvedValue(undefined);
+      mockFs.writeFile.mockResolvedValue(undefined);
+    };
+
+    it('applies kebab-case format: keeps kebab folder name as-is', async () => {
+      const kebabUri = vscode.Uri.file(
+        '/test/workspace/src/packages/my-package',
+      );
+      setupTemplateWithFormat('ReactPackage', 'kebab-case');
+
+      await updateComponent(kebabUri);
+
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'my-package' updated"),
+      );
+    });
+
+    it('applies kebab-case format: converts PascalCase folder name to kebab', async () => {
+      const pascalUri = vscode.Uri.file(
+        '/test/workspace/src/packages/MyPackage',
+      );
+      setupTemplateWithFormat('ReactPackage', 'kebab-case');
+
+      await updateComponent(pascalUri);
+
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'my-package' updated"),
+      );
+    });
+
+    it('applies camel-case format', async () => {
+      const uri = vscode.Uri.file('/test/workspace/src/components/my-button');
+      setupTemplateWithFormat('MyTemplate', 'camel-case');
+
+      await updateComponent(uri);
+
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'myButton' updated"),
+      );
+    });
+
+    it('applies snake-case format', async () => {
+      const uri = vscode.Uri.file('/test/workspace/src/components/MyButton');
+      setupTemplateWithFormat('MyTemplate', 'snake-case');
+
+      await updateComponent(uri);
+
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'my_button' updated"),
+      );
+    });
+
+    it('uses formatted name in compiled template content', async () => {
+      const uri = vscode.Uri.file('/test/workspace/src/packages/my-package');
+      setupTemplateWithFormat('ReactPackage', 'kebab-case');
+
+      await updateComponent(uri);
+
+      const [, content] = mockFs.writeFile.mock.calls[0] ?? [];
+      const text = new TextDecoder().decode(content as Uint8Array);
+      expect(text).toBe('// my-package');
     });
   });
 

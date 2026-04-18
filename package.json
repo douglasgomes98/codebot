@@ -24,6 +24,34 @@
           "type": "string",
           "default": "templates",
           "markdownDescription": "Path to the templates folder, relative to the workspace root."
+        },
+        "codebot.templateSettings": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "Per-template settings. Keys must match template folder names.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "nameFormat": {
+                "type": "string",
+                "enum": [
+                  "pascal-case",
+                  "kebab-case",
+                  "camel-case",
+                  "snake-case"
+                ],
+                "enumDescriptions": [
+                  "MyComponent (default)",
+                  "my-component",
+                  "myComponent",
+                  "my_component"
+                ],
+                "default": "pascal-case",
+                "description": "How the component name is formatted when generating files."
+              }
+            },
+            "additionalProperties": false
+          }
         }
       }
     },
