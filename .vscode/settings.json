@@ -30,5 +30,7 @@
 
   "typescript.tsc.autoDetect": "off",
 
-  "cSpell.words": ["codebot", "douglasgomes", "styfle", "vsix"]
+  "cSpell.words": ["codebot", "douglasgomes", "styfle", "vsix"],
+
+  "codebot.templatesFolderPath": "examples"
 }
