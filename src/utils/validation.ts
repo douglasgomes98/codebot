@@ -1,32 +1,11 @@
-import { COMPONENT_NAME_REGEX } from '../constants';
+import { formatToPascalCase } from './formatToPascalCase';
 
-export function isValidComponentName(name: string): boolean {
-  if (!name || typeof name !== 'string') {
-    return false;
-  }
-  return COMPONENT_NAME_REGEX.test(name.trim());
-}
+export { formatToPascalCase };
 
-export function sanitizeComponentName(name: string): string {
-  return name.trim().replace(/[^a-zA-Z0-9_-]/g, '');
-}
+const COMPONENT_NAME_RE = /^[A-Z][A-Za-z0-9]*$/;
 
-export function isValidPath(filePath: string): boolean {
-  if (!filePath || typeof filePath !== 'string') {
-    return false;
-  }
-  const normalizedPath = filePath.replace(/\\/g, '/');
-  return !normalizedPath.includes('../') && !normalizedPath.includes('./');
-}
+export const isValidComponentName = (name: string): boolean =>
+  COMPONENT_NAME_RE.test(name);
 
-export function sanitizePath(filePath: string): string {
-  return filePath.replace(/[<>:"|?*]/g, '').replace(/\.\./g, '');
-}
-
-export function isTemplateFile(filename: string): boolean {
-  return filename.endsWith('.hbs');
-}
-
-export function removeTemplateExtension(filename: string): string {
-  return filename.replace(/\.hbs$/, '');
-}
+export const COMPONENT_NAME_ERROR =
+  'Must start with a letter. Try "Button", "my-card", or "myComponent".';
