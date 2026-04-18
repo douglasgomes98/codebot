@@ -21,13 +21,13 @@ jobs:
           cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Checking code style
         run: npm run lint:check
 
       - name: Running tests
-        run: npm test
+        run: npm run test
 
       - name: Create Release
         env:

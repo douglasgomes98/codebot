@@ -22,7 +22,7 @@ jobs:
           cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Checking code style
         run: npm run lint:check
@@ -40,10 +40,10 @@ jobs:
           cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Running tests
-        run: npm test
+        run: npm run test
 
   build:
     name: Build
@@ -58,7 +58,7 @@ jobs:
           cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Building
         run: npm run build
