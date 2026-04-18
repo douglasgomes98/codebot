@@ -61,16 +61,6 @@ export const createComponent = async (
     return;
   }
 
-  let templateName: string | undefined;
-  if (templatesResult.value.length === 1) {
-    templateName = templatesResult.value[0];
-  } else {
-    templateName = await promptSelection(templatesResult.value, {
-      placeholder: 'Select a template',
-    });
-  }
-  if (!templateName) return;
-
   const rawName = await promptInput({
     prompt: 'Component name',
     placeholder: 'e.g. Button',
@@ -80,6 +70,16 @@ export const createComponent = async (
         : COMPONENT_NAME_ERROR,
   });
   if (!rawName) return;
+
+  let templateName: string | undefined;
+  if (templatesResult.value.length === 1) {
+    templateName = templatesResult.value[0];
+  } else {
+    templateName = await promptSelection(templatesResult.value, {
+      placeholder: 'Select a template',
+    });
+  }
+  if (!templateName) return;
 
   const componentName = formatToPascalCase(rawName.trim());
   const templateFolderUri = vscode.Uri.joinPath(templatesUri, templateName);

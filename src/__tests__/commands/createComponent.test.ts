@@ -81,6 +81,7 @@ describe('createComponent', () => {
         ['ComponentSass', 2],
         ['ComponentTailwind', 2],
       ] as never);
+      mockWindow.showInputBox.mockResolvedValue('Button');
       mockWindow.showQuickPick.mockResolvedValue(undefined);
 
       await createComponent(clickedUri);
