@@ -29,8 +29,8 @@
 
 Codebot reads a folder of [Handlebars](https://handlebarsjs.com/) (`.hbs`) template files you define once in your project, and generates all the files from that template every time you right-click a folder in the Explorer.
 
-- **Create Component** — generates a new folder with all files from the chosen template, with every `{{name}}` replaced by your component name.
-- **Update Component** — adds any missing files from a template into an existing component folder, without overwriting files that already exist.
+- **✨ Build Template** — generates a new folder with all files from the chosen template, with every `{{name}}` replaced by your component name.
+- **🔁 Update Template** — adds any missing files from a template into an existing folder, without overwriting files that already exist.
 
 Templates can be as simple as a single `.tsx` file or as complex as a full package with nested directories — Codebot handles both.
 
@@ -72,7 +72,7 @@ export * from './{{name}}';
 
 **3. Right-click any folder in the Explorer**
 
-Select **🤖 Create Component**, type the component name (e.g. `Button`), and Codebot creates:
+Select **✨ Build Template**, type the component name (e.g. `Button`), and Codebot creates:
 
 ```
 src/components/
@@ -116,18 +116,18 @@ The formatting of `{{name}}` is controlled by the [`nameFormat`](#name-formats) 
 
 Both commands are available by **right-clicking a folder** in the VS Code Explorer.
 
-### Create Component
+### ✨ Build Template
 
-> Right-click a folder → **🤖 Create Component**
+> Right-click a folder → **✨ Build Template**
 
 1. You are prompted for the component name.
 2. If you have more than one template, you select which template to use.
 3. Codebot creates a new subfolder named after the component and writes all template files inside it.
 4. Files that already exist are skipped automatically.
 
-### Update Component
+### 🔁 Update Template
 
-> Right-click an existing component folder → **🤖 Update Component**
+> Right-click an existing folder → **🔁 Update Template**
 
 Adds any template files that are missing from an existing component folder. The component name is derived from the folder you right-click. Existing files are never overwritten.
 

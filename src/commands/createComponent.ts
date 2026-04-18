@@ -27,7 +27,7 @@ export const createComponent = async (
   clickedUri?: vscode.Uri,
 ): Promise<void> => {
   if (!clickedUri) {
-    showError('Right-click a folder in the Explorer to create a component.');
+    showError('Right-click a folder in the Explorer to build a template.');
     return;
   }
 

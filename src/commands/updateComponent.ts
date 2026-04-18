@@ -26,7 +26,7 @@ export const updateComponent = async (
   clickedUri?: vscode.Uri,
 ): Promise<void> => {
   if (!clickedUri) {
-    showError('Right-click a component folder in the Explorer to update it.');
+    showError('Right-click a folder in the Explorer to update a template.');
     return;
   }
 
