@@ -9,15 +9,15 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
-    '!src/test/**/*',
+    '!src/__tests__/**/*',
+    '!src/__mocks__/**/*',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapper: {
-    '^vscode$': '<rootDir>/src/test/__mocks__/vscode.js'
+    '^vscode$': '<rootDir>/src/__mocks__/vscode.js',
   },
-  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
   maxWorkers: 1,
   forceExit: true,
-  detectOpenHandles: true
+  detectOpenHandles: true,
 };

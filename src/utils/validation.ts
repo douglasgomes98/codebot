@@ -1,37 +1,12 @@
-import { COMPONENT_NAME_REGEX } from '../constants';
+import { canBeFormatted } from './formatName';
+import { formatToPascalCase } from './formatToPascalCase';
 
-export class ValidationUtils {
-  static isValidComponentName(name: string): boolean {
-    if (!name || typeof name !== 'string') {
-      return false;
-    }
-    
-    return COMPONENT_NAME_REGEX.test(name.trim());
-  }
+export { canBeFormatted, formatToPascalCase };
 
-  static sanitizeComponentName(name: string): string {
-    return name.trim().replace(/[^a-zA-Z0-9_-]/g, '');
-  }
+const COMPONENT_NAME_RE = /^[A-Z][A-Za-z0-9]*$/;
 
-  static isValidPath(path: string): boolean {
-    if (!path || typeof path !== 'string') {
-      return false;
-    }
+export const isValidComponentName = (name: string): boolean =>
+  COMPONENT_NAME_RE.test(name);
 
-    // Check for path traversal attempts
-    const normalizedPath = path.replace(/\\/g, '/');
-    return !normalizedPath.includes('../') && !normalizedPath.includes('./');
-  }
-
-  static sanitizePath(path: string): string {
-    return path.replace(/[<>:"|?*]/g, '').replace(/\.\./g, '');
-  }
-
-  static isTemplateFile(filename: string): boolean {
-    return filename.endsWith('.hbs');
-  }
-
-  static removeTemplateExtension(filename: string): string {
-    return filename.replace(/\.hbs$/, '');
-  }
-}
+export const COMPONENT_NAME_ERROR =
+  'Must start with a letter. Try "Button", "my-card", or "myComponent".';

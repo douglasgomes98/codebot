@@ -1,0 +1,20 @@
+import { ReactNode } from 'react';
+import { VariantProps } from 'tailwind-variants';
+
+import { {{name}}Style } from './{{name}}.style';
+
+type {{name}}Variants = VariantProps<typeof {{name}}Style>;
+
+export type {{name}}Props = {{name}}Variants & {
+  children?: ReactNode;
+  className?: string;
+}
+
+export function {{name}}({children,className}: {{name}}Props) {
+  return (
+    <div className={ {{name}}Style({className}) }>
+      <h1>{{name}}</h1>
+      {children}
+    </div>
+  )
+}

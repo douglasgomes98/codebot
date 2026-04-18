@@ -1,270 +1,135 @@
-import * as path from 'path';
-import { ProjectDetector } from '../managers/ProjectDetector';
-import { TemplateManager } from '../managers/TemplateManager';
-import { PathResolver } from '../utils/PathResolver';
-import { ConfigurationManager } from '../managers/ConfigurationManager';
-import { ErrorType, CommandArgs, TemplateType, ProcessedFile, ProcessedDirectory } from '../types';
-import { CodebotError } from '../errors';
-import {
-  getTextByInputBox,
-  showMessage,
-  showSearchDropdown,
-  createFolder,
-  createFile,
-  checkExistsFile,
-  formatTemplateName,
-} from '../helpers';
+import * as path from 'node:path';
+import * as vscode from 'vscode';
+import { getNameFormat, readConfig } from '../helpers/config/readConfig';
+import { listTemplates } from '../helpers/template/listTemplates';
+import { processTemplateFolder } from '../helpers/template/processTemplateFolder';
+import { getWorkspaceFolders } from '../helpers/vscode/getWorkspaceFolders';
+import { promptInput } from '../helpers/vscode/promptInput';
+import { promptSelection } from '../helpers/vscode/promptSelection';
+import { showError } from '../helpers/vscode/showError';
+import { showInfo } from '../helpers/vscode/showInfo';
+import { createWorkspaceFolder } from '../helpers/vscode/workspace/createFolder';
+import { workspaceFileExists } from '../helpers/vscode/workspace/fileExists';
+import { writeWorkspaceFile } from '../helpers/vscode/workspace/writeFile';
+import { formatName } from '../utils/formatName';
+import { COMPONENT_NAME_ERROR, canBeFormatted } from '../utils/validation';
 
-export async function createComponent(args: CommandArgs) {
-  const projectDetector = new ProjectDetector();
-  const templateManager = new TemplateManager();
-  const pathResolver = new PathResolver();
-  const configurationManager = new ConfigurationManager();
+const findWorkspaceFolderUri = (
+  clickedUri: vscode.Uri,
+): vscode.Uri | undefined => {
+  const folders = getWorkspaceFolders();
+  if (!folders) return undefined;
+  const match = folders.find(f => clickedUri.fsPath.startsWith(f.path));
+  return match ? vscode.Uri.file(match.path) : undefined;
+};
 
-  try {
-    // Step 1: Detect project context using ProjectDetector
-    const currentFolderPath = args?.fsPath;
-    if (!currentFolderPath) {
-      throw new CodebotError(
-        ErrorType.WORKSPACE_NOT_FOUND,
-        'No folder path provided for component creation',
-        { args },
-        false
-      );
-    }
-
-    const projectContext = await projectDetector.detectProject(currentFolderPath);
-
-    // Step 2: Get component name from user
-    const componentNameInput = await getTextByInputBox('Enter the component name:');
-    if (!componentNameInput || componentNameInput.trim() === '') {
-      throw new CodebotError(
-        ErrorType.INVALID_COMPONENT_NAME,
-        'Component name cannot be empty',
-        { componentName: componentNameInput },
-        true
-      );
-    }
-
-    const trimmedComponentName = componentNameInput!.trim();
-
-    // Step 3: Validate component name using PathResolver
-    if (!pathResolver.validatePath(trimmedComponentName)) {
-      throw new CodebotError(
-        ErrorType.INVALID_COMPONENT_NAME,
-        `Invalid component name: ${trimmedComponentName}. Component names must be valid file/folder names.`,
-        { componentName: trimmedComponentName },
-        true
-      );
-    }
-
-    // Step 4: Discover templates using TemplateManager with hierarchical discovery
-    const availableTemplates = await templateManager.discoverTemplates(projectContext.projectRoot);
-    
-    if (availableTemplates.length === 0) {
-      throw new CodebotError(
-        ErrorType.TEMPLATE_FOLDER_EMPTY,
-        `No templates found in project. Searched in: ${projectContext.templatePath}`,
-        { 
-          projectRoot: projectContext.projectRoot,
-          templatePath: projectContext.templatePath,
-          isMultiProject: projectContext.isMultiProject
-        },
-        true
-      );
-    }
-
-    // Step 5: Select template type
-    let selectedTemplate: TemplateType | undefined;
-
-    if (availableTemplates.length === 1) {
-      selectedTemplate = availableTemplates[0];
-    } else {
-      const templateNames = availableTemplates.map(t => t.name);
-      const selectedTemplateName = await showSearchDropdown(
-        templateNames,
-        'Select template type',
-        'Start typing to filter templates...',
-      );
-
-      if (!selectedTemplateName) {
-        throw new CodebotError(
-          ErrorType.TEMPLATE_NOT_FOUND,
-          'No template type selected',
-          { availableTemplates: templateNames },
-          true
-        );
-      }
-
-      selectedTemplate = availableTemplates.find(t => t.name === selectedTemplateName);
-    }
-
-    if (!selectedTemplate) {
-      throw new CodebotError(
-        ErrorType.TEMPLATE_NOT_FOUND,
-        'Selected template not found',
-        { availableTemplates },
-        false
-      );
-    }
-
-    // Step 6: Resolve target path using PathResolver
-    const targetBasePath = pathResolver.resolveTargetPath(projectContext, trimmedComponentName, currentFolderPath);
-    
-    // Step 7: Process templates hierarchically and create files
-    const templateStructure = await templateManager.scanTemplateStructure(selectedTemplate.path);
-    
-    if (templateStructure.files.length === 0 && templateStructure.directories.length === 0) {
-      throw new CodebotError(
-        ErrorType.TEMPLATE_FOLDER_EMPTY,
-        `Template folder is empty: ${selectedTemplate.path}`,
-        { templatePath: selectedTemplate.path, templateName: selectedTemplate.name },
-        false
-      );
-    }
-
-    // Create target directory if it doesn't exist
-    if (!checkExistsFile(targetBasePath)) {
-      createFolder(targetBasePath);
-    }
-
-    // Process the template hierarchy
-    const processedTemplate = await templateManager.processTemplateHierarchy(templateStructure, trimmedComponentName);
-    
-    // Track creation and skipping statistics
-    const creationReport = {
-      filesCreated: 0,
-      filesSkipped: 0,
-      directoriesCreated: 0,
-      createdFiles: [] as string[],
-      skippedFiles: [] as string[]
-    };
-
-    // Process root-level files
-    await processFiles(processedTemplate.files, targetBasePath, creationReport);
-    
-    // Process directories recursively
-    await processDirectories(processedTemplate.directories, targetBasePath, creationReport);
-
-    let filesCreated = creationReport.filesCreated;
-    let filesSkipped = creationReport.filesSkipped;
-
-    // Step 8: Show success message with details
-    let successMessage = `Component '${trimmedComponentName}' created successfully!`;
-    if (filesCreated > 0) {
-      successMessage += ` (${filesCreated} files created`;
-      if (creationReport.directoriesCreated > 0) {
-        successMessage += `, ${creationReport.directoriesCreated} directories created`;
-      }
-      if (filesSkipped > 0) {
-        successMessage += `, ${filesSkipped} files skipped`;
-      }
-      successMessage += ')';
-    }
-
-    if (projectContext.isMultiProject && projectContext.projectName) {
-      successMessage += ` in project '${projectContext.projectName}'`;
-    }
-
-    showMessage(successMessage, 'information');
-
-  } catch (error) {
-    // Handle multi-project specific errors
-    if (error instanceof CodebotError) {
-      let errorMessage = error.message;
-      
-      // Add context for multi-project scenarios
-      if (error.type === ErrorType.TEMPLATE_FOLDER_EMPTY && error.details?.isMultiProject) {
-        errorMessage += '\n\nTip: In multi-project workspaces, templates can be placed in:';
-        errorMessage += `\n- Project-specific: ${error.details.projectRoot}/templates`;
-        errorMessage += `\n- Workspace-wide: ${error.details.workspaceRoot}/templates`;
-      }
-      
-      if (error.type === ErrorType.PROJECT_DETECTION_ERROR) {
-        errorMessage += '\n\nTip: Ensure you are running the command from within a valid project folder.';
-      }
-
-      showMessage(errorMessage, 'error');
-    } else if (error instanceof Error) {
-      // Handle unexpected errors
-      const unexpectedError = new CodebotError(
-        ErrorType.FILE_SYSTEM_ERROR,
-        `Unexpected error during component creation: ${error.message}`,
-        { originalError: error.message, stack: error.stack },
-        false
-      );
-      
-      showMessage(unexpectedError.message, 'error');
-    } else {
-      // Handle unknown errors
-      showMessage('An unknown error occurred during component creation', 'error');
-    }
+export const createComponent = async (
+  clickedUri?: vscode.Uri,
+): Promise<void> => {
+  if (!clickedUri) {
+    showError('Right-click a folder in the Explorer to build a template.');
+    return;
   }
-}
 
-// Helper function to process files hierarchically
-async function processFiles(
-  files: ProcessedFile[], 
-  basePath: string, 
-  creationReport: {
-    filesCreated: number;
-    filesSkipped: number;
-    directoriesCreated: number;
-    createdFiles: string[];
-    skippedFiles: string[];
+  const workspaceFolderUri = findWorkspaceFolderUri(clickedUri);
+  if (!workspaceFolderUri) {
+    showError(
+      'Could not determine the workspace folder for the selected path.',
+    );
+    return;
   }
-): Promise<void> {
-  for (const file of files) {
-    const targetFilePath = path.join(basePath, file.targetPath);
 
-    // Skip if file already exists (don't overwrite)
-    if (checkExistsFile(targetFilePath)) {
-      creationReport.filesSkipped++;
-      creationReport.skippedFiles.push(file.targetPath);
+  const config = readConfig(workspaceFolderUri);
+  const templatesUri = vscode.Uri.joinPath(
+    workspaceFolderUri,
+    config.templatesFolderPath,
+  );
+
+  const templatesResult = await listTemplates(templatesUri);
+  if (!templatesResult.success) {
+    showError(
+      `Could not read templates folder '${config.templatesFolderPath}'.`,
+    );
+    return;
+  }
+
+  if (templatesResult.value.length === 0) {
+    showError(`No templates found in '${config.templatesFolderPath}'.`);
+    return;
+  }
+
+  const rawName = await promptInput({
+    prompt: 'Component name',
+    placeholder: 'e.g. Button',
+    validateInput: v => (canBeFormatted(v) ? undefined : COMPONENT_NAME_ERROR),
+  });
+  if (!rawName) return;
+
+  let templateName: string | undefined;
+  if (templatesResult.value.length === 1) {
+    templateName = templatesResult.value[0];
+  } else {
+    templateName = await promptSelection(templatesResult.value, {
+      placeholder: 'Select a template',
+    });
+  }
+  if (!templateName) return;
+
+  const componentName = formatName(
+    rawName.trim(),
+    getNameFormat(config, templateName),
+  );
+  const templateFolderUri = vscode.Uri.joinPath(templatesUri, templateName);
+
+  const processedResult = await processTemplateFolder(
+    templateFolderUri,
+    templateName,
+    componentName,
+  );
+  if (!processedResult.success) {
+    showError(`Failed to process template: ${processedResult.error.message}`);
+    return;
+  }
+
+  let created = 0;
+  let skipped = 0;
+
+  for (const file of processedResult.value) {
+    const fileUri = vscode.Uri.joinPath(
+      clickedUri,
+      componentName,
+      file.targetRelativePath,
+    );
+
+    if (await workspaceFileExists(fileUri)) {
+      skipped++;
       continue;
     }
 
-    try {
-      // Create the file
-      createFile(targetFilePath, file.content);
-      creationReport.filesCreated++;
-      creationReport.createdFiles.push(file.targetPath);
-    } catch (error) {
-      throw new CodebotError(
-        ErrorType.TEMPLATE_PROCESSING_ERROR,
-        `Failed to create file: ${file.targetPath}`,
-        { targetPath: targetFilePath, error },
-        false
+    const parentUri = vscode.Uri.file(path.dirname(fileUri.fsPath));
+    const folderResult = await createWorkspaceFolder(parentUri);
+    if (!folderResult.success) {
+      showError(
+        `Failed to create folder for '${file.targetRelativePath}': ${folderResult.error.message}`,
       );
-    }
-  }
-}
-
-// Helper function to process directories hierarchically
-async function processDirectories(
-  directories: ProcessedDirectory[], 
-  basePath: string, 
-  creationReport: {
-    filesCreated: number;
-    filesSkipped: number;
-    directoriesCreated: number;
-    createdFiles: string[];
-    skippedFiles: string[];
-  }
-): Promise<void> {
-  for (const directory of directories) {
-    const targetDirPath = path.join(basePath, directory.targetPath);
-
-    // Create directory if it doesn't exist
-    if (!checkExistsFile(targetDirPath)) {
-      createFolder(targetDirPath);
-      creationReport.directoriesCreated++;
+      return;
     }
 
-    // Process files in this directory
-    await processFiles(directory.files, basePath, creationReport);
-    
-    // Process subdirectories recursively
-    await processDirectories(directory.subdirectories, basePath, creationReport);
+    const writeResult = await writeWorkspaceFile(fileUri, file.content);
+    if (!writeResult.success) {
+      showError(
+        `Failed to write '${file.targetRelativePath}': ${writeResult.error.message}`,
+      );
+      return;
+    }
+
+    created++;
   }
-}
+
+  const msg =
+    skipped > 0
+      ? `'${componentName}' created — ${created} file(s) written, ${skipped} skipped`
+      : `'${componentName}' created — ${created} file(s) written`;
+
+  showInfo(msg);
+};

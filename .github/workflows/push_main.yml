@@ -4,32 +4,30 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
+      - uses: actions/checkout@v4
 
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v4
         with:
-          node-version: "16.x"
+          node-version: "24.x"
           cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Checking code style
         run: npm run lint:check
 
       - name: Running tests
-        run: npm test
-
-      - name: Building
-        run: npm run build
+        run: npm run test
 
       - name: Create Release
         env:
@@ -37,13 +35,18 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm run semantic-release
 
+      - name: Building
+        run: npm run build
+
       - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v0
+        id: publishVSMarketplace
+        uses: HaaLeo/publish-vscode-extension@v1
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
 
-      # - name: Publish to Open VSX Registry
-      #   uses: HaaLeo/publish-vscode-extension@v0
-      #   with:
-      #     pat: ${{ secrets.OPEN_VSX_TOKEN }}
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          extensionFile: ${{ steps.publishVSMarketplace.outputs.vsixPath }}
