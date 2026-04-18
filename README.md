@@ -40,11 +40,11 @@ As in the gif example, you can press the mouse right-click button and select bet
 
 ### Changing the configurations
 
-1. Creates this file "codebot.config.json"
+Open VS Code settings (`Cmd+,` / `Ctrl+,`) and search for **Codebot**, or add the following to your `.vscode/settings.json`:
 
-```
+```json
 {
-  "templateFolderPath": "src/templates"
+  "codebot.templatesFolderPath": "src/templates"
 }
 ```
 
