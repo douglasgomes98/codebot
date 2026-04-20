@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/douglasgomes98/codebot/compare/v2.0.0...v2.0.1) (2026-04-20)
+
+
+### Bug Fixes
+
+* nameFormat not respected in multi-root workspace ([#247](https://github.com/douglasgomes98/codebot/issues/247)) ([fb4ca75](https://github.com/douglasgomes98/codebot/commit/fb4ca75b7682581f00c13dd0e4eb92d4bfe499f4)), closes [#246](https://github.com/douglasgomes98/codebot/issues/246)
+
 # [2.0.0](https://github.com/douglasgomes98/codebot/compare/v1.0.0...v2.0.0) (2026-04-18)
 
 
