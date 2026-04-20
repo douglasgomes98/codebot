@@ -267,6 +267,101 @@ describe('updateComponent', () => {
     });
   });
 
+  describe('multi-root workspace', () => {
+    const appClickedUri = vscode.Uri.file(
+      '/test/packages/app/src/components/MyButton',
+    );
+    const libClickedUri = vscode.Uri.file(
+      '/test/packages/lib/src/components/MyButton',
+    );
+
+    beforeEach(() => {
+      (
+        vscode.workspace as unknown as Record<string, unknown>
+      ).workspaceFolders = [
+        { uri: { fsPath: '/test/packages/app' }, name: 'app', index: 0 },
+        { uri: { fsPath: '/test/packages/lib' }, name: 'lib', index: 1 },
+      ];
+
+      const configFactory = (
+        _section?: string,
+        scope?: vscode.ConfigurationScope | null,
+      ): vscode.WorkspaceConfiguration => {
+        const fsPath =
+          scope != null && 'fsPath' in scope
+            ? (scope as vscode.Uri).fsPath
+            : undefined;
+        return {
+          get: jest.fn().mockImplementation((key: string) => {
+            if (key === 'templatesFolderPath') return 'templates';
+            if (key === 'templateSettings') {
+              return fsPath?.startsWith('/test/packages/app')
+                ? { ReactPackage: { nameFormat: 'kebab-case' } }
+                : {};
+            }
+            return undefined;
+          }),
+          update: jest.fn(),
+          has: jest.fn(),
+          inspect: jest.fn(),
+        } as unknown as vscode.WorkspaceConfiguration;
+      };
+
+      mockGetConfiguration.mockImplementation(configFactory);
+    });
+
+    afterEach(() => {
+      (
+        vscode.workspace as unknown as Record<string, unknown>
+      ).workspaceFolders = [
+        { uri: { fsPath: '/test/workspace' }, name: 'workspace', index: 0 },
+      ];
+    });
+
+    const setupTemplate = () => {
+      mockFs.readDirectory
+        .mockResolvedValueOnce([['ReactPackage', 2]] as never)
+        .mockResolvedValueOnce([['index.hbs', 1]] as never);
+      mockFs.readFile.mockResolvedValue(encode('// {{name}}') as never);
+      mockFs.stat.mockRejectedValue(new Error('not found'));
+      mockFs.createDirectory.mockResolvedValue(undefined);
+      mockFs.writeFile.mockResolvedValue(undefined);
+    };
+
+    it('applies nameFormat from the workspace folder containing the clicked path', async () => {
+      setupTemplate();
+
+      await updateComponent(appClickedUri);
+
+      // app has kebab-case → 'MyButton' becomes 'my-button'
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'my-button' updated"),
+      );
+    });
+
+    it('applies a different config when clicking inside a different workspace folder', async () => {
+      setupTemplate();
+
+      await updateComponent(libClickedUri);
+
+      // lib has no nameFormat → falls back to pascal-case → 'MyButton' stays
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'MyButton' updated"),
+      );
+    });
+
+    it('passes clickedUri to getConfiguration, not the workspace folder root', async () => {
+      setupTemplate();
+
+      await updateComponent(appClickedUri);
+
+      expect(mockGetConfiguration).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ fsPath: appClickedUri.fsPath }),
+      );
+    });
+  });
+
   describe('nameFormat per template', () => {
     const setupTemplateWithFormat = (
       templateName: string,

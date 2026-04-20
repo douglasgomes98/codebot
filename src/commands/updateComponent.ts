@@ -46,7 +46,7 @@ export const updateComponent = async (
     return;
   }
 
-  const config = readConfig(workspaceFolderUri);
+  const config = readConfig(clickedUri);
   const templatesUri = vscode.Uri.joinPath(
     workspaceFolderUri,
     config.templatesFolderPath,
