@@ -28,6 +28,20 @@ const workspace = {
       index: 0,
     },
   ],
+  getWorkspaceFolder(uri) {
+    const folders = workspace.workspaceFolders;
+    if (!folders || folders.length === 0) return undefined;
+    const sep = require('node:path').sep;
+    return (
+      [...folders]
+        .sort((a, b) => b.uri.fsPath.length - a.uri.fsPath.length)
+        .find(
+          f =>
+            uri.fsPath === f.uri.fsPath ||
+            uri.fsPath.startsWith(f.uri.fsPath + sep),
+        ) ?? undefined
+    );
+  },
 };
 
 const window = {

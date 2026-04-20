@@ -525,6 +525,33 @@ describe('createComponent', () => {
         expect.objectContaining({ fsPath: appClickedUri.fsPath }),
       );
     });
+
+    it('does not confuse a folder whose name is a prefix of another folder', async () => {
+      (
+        vscode.workspace as unknown as Record<string, unknown>
+      ).workspaceFolders = [
+        { uri: { fsPath: '/test/packages/app' }, name: 'app', index: 0 },
+        {
+          uri: { fsPath: '/test/packages/application' },
+          name: 'application',
+          index: 1,
+        },
+      ];
+
+      const applicationUri = vscode.Uri.file(
+        '/test/packages/application/src/components',
+      );
+      setupTemplate();
+      mockWindow.showInputBox.mockResolvedValue('my-package');
+
+      await createComponent(applicationUri);
+
+      // templates must be looked up under /test/packages/application, not /test/packages/app
+      const templatesDirCall = mockFs.readDirectory.mock
+        .calls[0][0] as vscode.Uri;
+      expect(templatesDirCall.fsPath).toContain('/test/packages/application');
+      expect(templatesDirCall.fsPath).not.toMatch(/\/test\/packages\/app\b/);
+    });
   });
 
   describe('nameFormat per template', () => {
