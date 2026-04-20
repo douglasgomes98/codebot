@@ -23,11 +23,13 @@
         "codebot.templatesFolderPath": {
           "type": "string",
           "default": "templates",
+          "scope": "resource",
           "markdownDescription": "Path to the templates folder, relative to the workspace root."
         },
         "codebot.templateSettings": {
           "type": "object",
           "default": {},
+          "scope": "resource",
           "markdownDescription": "Per-template settings. Keys must match template folder names.",
           "additionalProperties": {
             "type": "object",

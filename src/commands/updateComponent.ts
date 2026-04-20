@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import { getNameFormat, readConfig } from '../helpers/config/readConfig';
 import { listTemplates } from '../helpers/template/listTemplates';
 import { processTemplateFolder } from '../helpers/template/processTemplateFolder';
-import { getWorkspaceFolders } from '../helpers/vscode/getWorkspaceFolders';
 import { promptSelection } from '../helpers/vscode/promptSelection';
 import { showError } from '../helpers/vscode/showError';
 import { showInfo } from '../helpers/vscode/showInfo';
@@ -12,15 +11,6 @@ import { workspaceFileExists } from '../helpers/vscode/workspace/fileExists';
 import { writeWorkspaceFile } from '../helpers/vscode/workspace/writeFile';
 import { formatName } from '../utils/formatName';
 import { canBeFormatted } from '../utils/validation';
-
-const findWorkspaceFolderUri = (
-  clickedUri: vscode.Uri,
-): vscode.Uri | undefined => {
-  const folders = getWorkspaceFolders();
-  if (!folders) return undefined;
-  const match = folders.find(f => clickedUri.fsPath.startsWith(f.path));
-  return match ? vscode.Uri.file(match.path) : undefined;
-};
 
 export const updateComponent = async (
   clickedUri?: vscode.Uri,
@@ -38,7 +28,8 @@ export const updateComponent = async (
     return;
   }
 
-  const workspaceFolderUri = findWorkspaceFolderUri(clickedUri);
+  const workspaceFolderUri =
+    vscode.workspace.getWorkspaceFolder(clickedUri)?.uri;
   if (!workspaceFolderUri) {
     showError(
       'Could not determine the workspace folder for the selected path.',
@@ -46,7 +37,7 @@ export const updateComponent = async (
     return;
   }
 
-  const config = readConfig(workspaceFolderUri);
+  const config = readConfig(clickedUri);
   const templatesUri = vscode.Uri.joinPath(
     workspaceFolderUri,
     config.templatesFolderPath,

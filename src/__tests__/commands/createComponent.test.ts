@@ -434,6 +434,126 @@ describe('createComponent', () => {
     });
   });
 
+  describe('multi-root workspace', () => {
+    const appClickedUri = vscode.Uri.file('/test/packages/app/src/components');
+    const libClickedUri = vscode.Uri.file('/test/packages/lib/src/components');
+
+    beforeEach(() => {
+      (
+        vscode.workspace as unknown as Record<string, unknown>
+      ).workspaceFolders = [
+        { uri: { fsPath: '/test/packages/app' }, name: 'app', index: 0 },
+        { uri: { fsPath: '/test/packages/lib' }, name: 'lib', index: 1 },
+      ];
+
+      const configFactory = (
+        _section?: string,
+        scope?: vscode.ConfigurationScope | null,
+      ): vscode.WorkspaceConfiguration => {
+        const fsPath =
+          scope != null && 'fsPath' in scope
+            ? (scope as vscode.Uri).fsPath
+            : undefined;
+        return {
+          get: jest.fn().mockImplementation((key: string) => {
+            if (key === 'templatesFolderPath') return 'templates';
+            if (key === 'templateSettings') {
+              return fsPath?.startsWith('/test/packages/app')
+                ? { ReactPackage: { nameFormat: 'kebab-case' } }
+                : {};
+            }
+            return undefined;
+          }),
+          update: jest.fn(),
+          has: jest.fn(),
+          inspect: jest.fn(),
+        } as unknown as vscode.WorkspaceConfiguration;
+      };
+
+      mockGetConfiguration.mockImplementation(configFactory);
+    });
+
+    afterEach(() => {
+      (
+        vscode.workspace as unknown as Record<string, unknown>
+      ).workspaceFolders = [
+        { uri: { fsPath: '/test/workspace' }, name: 'workspace', index: 0 },
+      ];
+    });
+
+    const setupTemplate = () => {
+      mockFs.readDirectory
+        .mockResolvedValueOnce([['ReactPackage', 2]] as never)
+        .mockResolvedValueOnce([['index.hbs', 1]] as never);
+      mockFs.readFile.mockResolvedValue(encode('// {{name}}') as never);
+      mockFs.stat.mockRejectedValue(new Error('not found'));
+      mockFs.createDirectory.mockResolvedValue(undefined);
+      mockFs.writeFile.mockResolvedValue(undefined);
+    };
+
+    it('applies nameFormat from the workspace folder containing the clicked path', async () => {
+      setupTemplate();
+      mockWindow.showInputBox.mockResolvedValue('my-package');
+
+      await createComponent(appClickedUri);
+
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'my-package' created"),
+      );
+    });
+
+    it('applies a different config when clicking inside a different workspace folder', async () => {
+      setupTemplate();
+      mockWindow.showInputBox.mockResolvedValue('my-package');
+
+      await createComponent(libClickedUri);
+
+      // lib has no nameFormat → falls back to pascal-case
+      expect(mockWindow.showInformationMessage).toHaveBeenCalledWith(
+        expect.stringContaining("'MyPackage' created"),
+      );
+    });
+
+    it('passes clickedUri to getConfiguration, not the workspace folder root', async () => {
+      setupTemplate();
+      mockWindow.showInputBox.mockResolvedValue('my-package');
+
+      await createComponent(appClickedUri);
+
+      expect(mockGetConfiguration).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ fsPath: appClickedUri.fsPath }),
+      );
+    });
+
+    it('does not confuse a folder whose name is a prefix of another folder', async () => {
+      (
+        vscode.workspace as unknown as Record<string, unknown>
+      ).workspaceFolders = [
+        { uri: { fsPath: '/test/packages/app' }, name: 'app', index: 0 },
+        {
+          uri: { fsPath: '/test/packages/application' },
+          name: 'application',
+          index: 1,
+        },
+      ];
+
+      const applicationUri = vscode.Uri.file(
+        '/test/packages/application/src/components',
+      );
+      setupTemplate();
+      mockWindow.showInputBox.mockResolvedValue('my-package');
+
+      await createComponent(applicationUri);
+
+      // templates must be looked up under /test/packages/application, not /test/packages/app
+      const templatesDirCall = mockFs.readDirectory.mock
+        .calls[0][0] as vscode.Uri;
+      expect(templatesDirCall.fsPath).toContain('/test/packages/application');
+      expect(templatesDirCall.fsPath).not.toMatch(/\/test\/packages\/app\b/);
+    });
+  });
+
   describe('nameFormat per template', () => {
     const setupTemplateWithFormat = (
       templateName: string,

@@ -1,5 +1,3 @@
-export type { WorkspaceFolder } from './getWorkspaceFolders';
-export { getWorkspaceFolders } from './getWorkspaceFolders';
 export type { InputOptions } from './promptInput';
 export { promptInput } from './promptInput';
 export type { SelectionOptions } from './promptSelection';
